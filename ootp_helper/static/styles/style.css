@@ -1,0 +1,54 @@
+html		{background-color:#fefefe}
+body        {
+				font-family: Open Sans,Arial; 
+				color: #454545;
+				margin: 40px auto;
+                line-height: 1.6;
+                font-size: 18px;
+                padding: 0 10px
+            }
+a, h1, h2       { color: #001f3f; }
+h1, h2          { margin: 0; line-height: 1.2; color: #454545;}
+h2              { font-size: 1.5em; }
+
+table.dataframe, .dataframe th, .dataframe td {
+  border: none;
+  border-bottom: 1px solid #C8C8C8;
+  border-collapse: collapse;
+  text-align:left;
+  padding: 10px;
+  margin-bottom: 40px;
+  font-size: 0.9em;
+}
+
+
+.male th {
+    background-color: #add8e6;
+    color: white;
+}
+
+.female th {
+    background-color: #77dd77;
+    color: white;
+}
+
+tr:nth-child(odd)		{ background-color:#eee; }
+tr:nth-child(even)	{ background-color:#fefefe; }
+
+tr:hover            { background-color: #FFDC00;}
+
+.row {
+    display: flex;
+}
+
+.column { 
+    flex: 50%;
+}
+
+/* Responsive layout - when the screen is less than 600px wide, make the two columns stack on top of each other instead of next to each other */
+@media screen and (max-width: 600px) {
+    .column {
+        width: 100%;
+    }
+}
+

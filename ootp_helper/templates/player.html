@@ -1,0 +1,419 @@
+<!doctype html>
+<head>
+  <link rel= "stylesheet" type= "text/css" href= "../static/styles/style.css">
+  <title>Development: {% if name %} {{name}} {% else %} ??? {% endif %}</title>
+  <script type="text/javascript" src="../static/d3.min.js"></script>
+</head>
+  <body>
+  <h1> <a href = "../"><img src="../static/bender.png", width="5%"> OOTP Robit</a></h1>
+  <h2> {% if phrase %} {{phrase}} {% else %} This would say something witty, but Hugh is dumb {% endif %}</h2>
+
+  <div class='row'>
+      <div class = 'column'>
+          <h3> Team search </h3>
+          <form method="POST">
+              <input name="team">
+              <input type="submit">
+          </form>
+      </div>
+      <div class = 'column'  valign="center">
+          <input type = 'button' value = 'Player Comparison' onclick='window.location.href="/compare"'>
+      </div>
+      <div class = 'column'>
+          <h3> Player search </h3>
+          <form method="POST">
+              <input name="player">
+              <input type="submit">
+          </form>
+      </div>
+  </div>
+  <hr></hr>
+
+  {% if name %}
+    <h1>  {{name|safe}}  </h1>
+    {% if bio %}
+    <p style="font-size:150%;"> {{bio|safe}} <p>
+    {% else %}
+    <h2> Under construction! </h2>
+    {% endif %}
+    {% if stats %}
+    <p style="font-size:150%;color:#AAAAAA"> {{stats|safe}} <p>
+    {% else %}
+    <h2> Under construction! </h2>
+    {% endif %}
+
+    <div class='row' id="ratings">
+      <!-- d3 code will be inserted here -->
+    </div>
+
+    <div class="row">
+      <div class="column">
+        {% if table %}
+          <h1> Past Information </h1>
+          <br>
+          {{table|safe }}
+        {% else %}
+          <p> Error - no table </p>
+        {% endif %}
+      </div>
+    </div>
+    <hr></hr>
+      <div class="row">
+      <div class="column">
+        <div>
+          {% if total_change_str %}
+            <p style="font-size:20px;"> {{total_change_str|safe}} </p>
+          {% else %}
+          {% endif %}
+        </div>
+
+        {% if def_stats %}
+          <h3> Defensive Stats <h3>
+          {{def_stats|safe }}
+        {% else %}
+          <p> Error - no table </p>
+        {% endif %}
+      </div>
+    </div>
+    <hr></hr>
+    <h3> Development </h3>
+    <div class="row">
+      <div class="column" id="development_og">
+        <!-- d3 code will be inserted here -->
+      </div>
+      <div class="column" id="development_mwar">
+        <!-- d3 code will be inserted here -->
+      </div>
+    </div>
+    <div class="row">
+      <div class="column" id="development_woba">
+        <!-- d3 code will be inserted here -->
+      </div>
+      <div class="column" id="development_fip">
+        <!-- d3 code will be inserted here -->
+      </div>
+    </div>
+  {% else %}
+    <h1>Hello, World!</h1>
+  {% endif %}
+</body>
+
+<script type="text/javascript" src="../static/player_rating_bars.js"></script>
+
+<script type="text/javascript">
+  // do jinja things
+  var pitching_json = JSON.parse({{pit_rats|tojson}})
+  var batting_json = JSON.parse({{bat_rats|tojson}})
+  var other_json = JSON.parse({{other_rats|tojson}})
+  var def_json = JSON.parse({{def_rats|tojson}})
+  // then build our svg
+  createSVG(pitching_json, batting_json, other_json, def_json)
+</script>
+
+<script type="text/javascript">
+  var subset_json = JSON.parse({{subset|tojson}});
+  var month_labs = {{months|tojson}}['months'];
+
+  // sizing
+  var svg_height = 400
+  var svg_width = 600
+  var pct_pad = 0.075
+  var it_sz = 5  // items
+  var x_padding = pct_pad * svg_height - 10
+  var y_padding = pct_pad * svg_width - 10
+
+  // add a background color (scheme in https://visme.co/blog/website-color-schemes/)
+  color_back = '#FFFFFF'
+  color_main = '#123C69'
+  color_sec = '#AC3B61'
+  color_ter = '#BAB2B5'
+
+  // create our svg
+  svg1 = d3.select('#development_og')
+          .append('svg')
+          .attr('width', svg_width)
+          .attr('height', svg_height);
+
+  svg1.append('rect')
+     .attr('width', svg_width)
+     .attr('height', svg_height)
+     .attr('fill', color_back);
+
+  svg2 = d3.select('#development_woba')
+          .append('svg')
+          .attr('width', svg_width)
+          .attr('height', svg_height);
+
+  svg2.append('rect')
+      .attr('width', svg_width)
+      .attr('height', svg_height)
+      .attr('fill', color_back);
+
+  svg3 = d3.select('#development_fip')
+           .append('svg')
+           .attr('width', svg_width)
+           .attr('height', svg_height);
+
+  svg3.append('rect')
+      .attr('width', svg_width)
+      .attr('height', svg_height)
+      .attr('fill', color_back);
+
+  svg4 = d3.select('#development_mwar')
+     .append('svg')
+     .attr('width', svg_width)
+     .attr('height', svg_height);
+
+  svg4.append('rect')
+      .attr('width', svg_width)
+      .attr('height', svg_height)
+      .attr('fill', color_back);
+  // throw a legend on
+  // svg.append('circle')
+  //    .attr('cx', x_padding + svg_width / 10)
+  //    .attr('cy', y_padding / 2.5)
+  //    .attr('r', y_padding / 6)
+  //    .attr('fill', color_main)
+
+  // svg.append('text')
+  //    .attr('x', x_padding + (svg_width / 10) + 20)
+  //    .attr('y', y_padding / 2.5)
+  //    .attr("alignment-baseline","middle")
+  //    .text('Old Grade');
+
+  // svg.append('circle')
+  //    .attr('cx', x_padding + svg_width / 4)
+  //    .attr('cy', y_padding / 2.5)
+  //    .attr('r', y_padding / 6)
+  //    .attr('fill', color_sec)
+
+  // svg.append('text')
+  //    .attr('x', x_padding + (svg_width / 4) + 20)
+  //    .attr('y', y_padding / 2.5)
+  //    .attr("alignment-baseline","middle")
+  //    .text('woba_mean');
+
+  // x-axis
+  var x_scale = d3.scaleLinear()
+                  .domain([subset_json.length - 1, 0])
+                  .range([pct_pad * svg_width, (1 - pct_pad) * svg_width]);
+  var x_axis = d3.axisBottom()
+                 .tickFormat(function(d, i){return(month_labs[i])})
+                 .scale(x_scale);
+
+  svg1.append('g')
+     .attr('class', 'axis')
+     .attr('transform', 'translate(0,' + (svg_height - x_padding) + ")")
+     .attr('font-weight', 'bold')
+     .call(x_axis);
+
+  svg2.append('g')
+     .attr('class', 'axis')
+     .attr('transform', 'translate(0,' + (svg_height - x_padding) + ")")
+     .attr('font-weight', 'bold')
+     .call(x_axis);
+
+  svg3.append('g')
+     .attr('class', 'axis')
+     .attr('transform', 'translate(0,' + (svg_height - x_padding) + ")")
+     .attr('font-weight', 'bold')
+     .call(x_axis);
+
+  svg4.append('g')
+     .attr('class', 'axis')
+     .attr('transform', 'translate(0,' + (svg_height - x_padding) + ")")
+     .attr('font-weight', 'bold')
+     .call(x_axis);
+
+  // OG scale (one y-axis)
+  // min/max flipped to maintain correct axis
+  var og_scale = d3.scaleLinear().domain([
+    d3.max(subset_json, function(d) {return (d['old grade'])}),
+    d3.min(subset_json, function(d) {return (d['old grade'])}),
+  ]).range([
+    pct_pad * svg_height, 
+    (1 - pct_pad) * svg_height
+  ]);
+
+  var y_axis1 = d3.axisLeft()
+                  .scale(og_scale);
+
+  svg1.append('g')
+     .attr('class', 'axis')
+     .attr('transform', 'translate(' + y_padding + ",0)")
+     .attr('font-weight', 'bold')
+     .call(y_axis1);
+
+  // secondary att scale
+  // min/max flipped to mantain correct axis
+  var woba_scale = d3.scaleLinear().domain([
+    d3.max(subset_json, function(d) {return d['woba_mean']}),
+    d3.min(subset_json, function(d) {return d['woba']}),
+  ]).range([
+    pct_pad * svg_height, 
+    (1 - pct_pad) * svg_height
+  ]);
+
+  var y_axis2 = d3.axisLeft()
+                  .scale(woba_scale);
+
+  svg2.append('g')
+     .attr('class', 'axis')
+     .attr('transform', 'translate(' + y_padding + ",0)")
+     .attr('font-weight', 'bold')
+     .call(y_axis2);
+
+  var fip_scale = d3.scaleLinear().domain([
+    d3.min(subset_json, function(d) {return d['fip_mean']}),
+    d3.max(subset_json, function(d) {return d['fip']}),
+  ]).range([
+    pct_pad * svg_height, 
+    (1 - pct_pad) * svg_height
+  ]);
+
+  var y_axis3 = d3.axisLeft()
+                  .scale(fip_scale);
+
+  svg3.append('g')
+     .attr('class', 'axis')
+     .attr('transform', 'translate(' + y_padding + ",0)")
+     .attr('font-weight', 'bold')
+     .call(y_axis3);
+
+
+  var war_scale = d3.scaleLinear().domain([
+    d3.max(subset_json, function(d) {return d['mwar_mean']}),
+    d3.min(subset_json, function(d) {return d['mwar']}),
+  ]).range([
+    pct_pad * svg_height, 
+    (1 - pct_pad) * svg_height
+  ]);
+
+  var y_axis4 = d3.axisLeft()
+                  .scale(war_scale);
+
+  svg4.append('g')
+     .attr('class', 'axis')
+     .attr('transform', 'translate(' + y_padding + ",0)")
+     .attr('font-weight', 'bold')
+     .call(y_axis4);
+
+  // function to create lines between OG pts
+  var og_line = d3.line()
+                  .x(function(d){return(x_scale(d['index']))})
+                  .y(function(d){return(og_scale(d['old grade']))});
+
+  var woba_line = d3.line()
+                    .x(function(d){return(x_scale(d['index']))})
+                    .y(function(d){return(woba_scale(d['woba']))});
+
+  var woba_line_pot = d3.line()
+                        .x(function(d){return(x_scale(d['index']))})
+                        .y(function(d){return(woba_scale(d['woba_mean']))});
+
+  var fip_line = d3.line()
+                   .x(function(d){return(x_scale(d['index']))})
+                   .y(function(d){return(fip_scale(d['fip']))});
+
+  var fip_line_pot = d3.line()
+                       .x(function(d){return(x_scale(d['index']))})
+                       .y(function(d){return(fip_scale(d['fip_mean']))});
+
+  var war_line = d3.line()
+                   .x(function(d){return(x_scale(d['index']))})
+                   .y(function(d){return(war_scale(d['mwar']))});
+
+  var war_line_pot = d3.line()
+                       .x(function(d){return(x_scale(d['index']))})
+                       .y(function(d){return(war_scale(d['mwar_mean']))});
+
+
+  // lines to connect both
+  svg1.append('path')
+     .datum(subset_json)
+     .attr('class', 'line')
+     .attr('d', og_line)
+     .attr('fill', 'none')
+     .attr("stroke", color_main)
+     .attr("stroke-width", 0.5 * it_sz);
+
+  svg2.append('path')
+     .datum(subset_json)
+     .attr('class', 'line')
+     .attr('d', woba_line)
+     .attr('fill', 'none')
+     .attr("stroke", color_sec)
+     .attr("stroke-width", 0.5 * it_sz);
+
+  svg2.append('path')
+     .datum(subset_json)
+     .attr('class', 'line')
+     .attr('d', woba_line_pot)
+     .attr('fill', 'none')
+     .attr("stroke", color_sec)
+     .attr("stroke-width", 0.5 * it_sz)
+     .style("stroke-dasharray", ("3, 3"));
+
+
+  svg3.append('path')
+     .datum(subset_json)
+     .attr('class', 'line')
+     .attr('d', fip_line)
+     .attr('fill', 'none')
+     .attr("stroke", color_ter)
+     .attr("stroke-width", 0.5 * it_sz);
+
+  svg3.append('path')
+     .datum(subset_json)
+     .attr('class', 'line')
+     .attr('d', fip_line_pot)
+     .attr('fill', 'none')
+     .attr("stroke", color_ter)
+     .attr("stroke-width", 0.5 * it_sz)
+     .style("stroke-dasharray", ("3, 3"));
+
+  svg4.append('path')
+     .datum(subset_json)
+     .attr('class', 'line')
+     .attr('d', war_line)
+     .attr('fill', 'none')
+     .attr("stroke", color_main)
+     .attr("stroke-width", 0.5 * it_sz)
+
+  svg4.append('path')
+     .datum(subset_json)
+     .attr('class', 'line')
+     .attr('d', war_line_pot)
+     .attr('fill', 'none')
+     .attr("stroke", color_main)
+     .attr("stroke-width", 0.5 * it_sz)
+     .style("stroke-dasharray", ("3, 3"));
+
+  svg1.append("text")
+     .attr("x", (svg_width / 2))             
+     .attr("y", 20)
+     .attr("text-anchor", "middle")  
+     .style("font-size", "24px") 
+     .text("Old Grade");
+
+  svg2.append("text")
+     .attr("x", (svg_width / 2))             
+     .attr("y", 20)
+     .attr("text-anchor", "middle")  
+     .style("font-size", "24px") 
+     .text("wOBA");
+
+  svg3.append("text")
+     .attr("x", (svg_width / 2))             
+     .attr("y", 20)
+     .attr("text-anchor", "middle")  
+     .style("font-size", "24px") 
+     .text("FIP");
+
+  svg4.append("text")
+     .attr("x", (svg_width / 2))             
+     .attr("y", 20)
+     .attr("text-anchor", "middle")  
+     .style("font-size", "24px") 
+     .text("WAR");
+</script>

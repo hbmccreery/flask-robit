@@ -1,0 +1,41 @@
+<!doctype html>
+<link rel= "stylesheet" type= "text/css" href= "../../static/styles/style.css">
+<title>Player Comparison</title>
+
+<h1> <a href = "../../"><img src="../../static/bender.png", width="5%"> OOTP Robit</a></h1>
+<h2> {% if phrase %} {{phrase}} {% else %} This would say something witty, but Hugh is dumb {% endif %}</h2>
+
+<div class='row'>
+    <div class = 'column'>
+        <h3> Team search </h3>
+        <form method="POST">
+            <input name="team">
+            <input type="submit">
+        </form>
+    </div>
+    <div class = 'column'  valign="center">
+        <input type = 'button' value = 'Player Comparison' onclick='window.location.href="/compare"'>
+    </div>
+    <div class = 'column'>
+        <h3> Player search </h3>
+        <form method="POST">
+            <input name="player">
+            <input type="submit">
+        </form>
+    </div>
+</div>
+<hr></hr>
+
+<font size = "+2">
+{% if table %}
+{{table|safe}}
+{% else %}
+You've reached this page in error! Something's gone wrong, so go bother me
+{% endif %}
+</font>
+
+{% if src %}
+<img src={{src}}></img>
+{% else %}
+We can't generate plots yet!
+{% endif %}
