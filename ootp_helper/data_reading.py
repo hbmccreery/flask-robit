@@ -43,7 +43,7 @@ def render_standing_tables(divs: list, standings: pd.DataFrame, cm) -> dict:
 
 def create_standings() -> Tuple[dict, dict]:
 	# read standings from csv, create team link
-	standings = pd.read_csv('current_projections.csv')
+	standings = pd.read_csv('csv_data/current_projections.csv')
 	standings['Team'] = standings['Team'].apply(
 		lambda x: "<a  href='./team/{}'><img height='50px' src=../static/team_logos/{}.png></a>".format(x, x)
 	)
@@ -59,3 +59,10 @@ def create_standings() -> Tuple[dict, dict]:
 	nl_standing_tables = render_standing_tables(['NLE', 'NLC', 'NLW'], standings, cm)
 
 	return al_standing_tables, nl_standing_tables
+
+
+def create_benchmarks() -> Tuple[pd.DataFrame, pd.DataFrame]:
+	batting_benchmarks = pd.read_csv('csv_data/batting_benchmarks.csv')
+	pitching_benchmarks = pd.read_csv('csv_data/pitching_benchmarks.csv')
+
+	return batting_benchmarks, pitching_benchmarks

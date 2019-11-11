@@ -16,6 +16,9 @@ def generate_defense_table(stats: pd.DataFrame, ratings: pd.DataFrame) -> str:
     stats = stats.append(ratings_to_runs(stats.iloc[2]), ignore_index=True)
     stats = stats.applymap(int)
 
+    # get their best position
+    best_position = stats.iloc[0].idxmax()
+
     # mess around with the table
     stats.insert(0, 'Type', ['POT ZR', 'potential', 'current', 'CUR ZR'])
     stats = stats.reindex([3,0,2,1])
@@ -33,7 +36,7 @@ def generate_defense_table(stats: pd.DataFrame, ratings: pd.DataFrame) -> str:
         [{'selector': 'th', 'props': [('font-size', '1.2em')]}]
     ).hide_index().render()
 
-    return rendered_ratings, rendered_stats
+    return rendered_ratings, rendered_stats, best_position
 
 
 def generate_bat_table(ratings: pd.DataFrame, helper: str) -> str:

@@ -10,7 +10,7 @@ import json
 from itertools import product, groupby, chain
 
 from ootp_helper.constants import *
-from ootp_helper.data_reading import create_player_data, create_standings
+from ootp_helper.data_reading import create_player_data, create_standings, create_benchmarks
 from ootp_helper.player.header_text import generate_player_name, generate_player_header, generate_player_stat_string
 from ootp_helper.player.run_calculators import *
 from ootp_helper.player.table_generators import *
@@ -21,11 +21,11 @@ dfs = create_player_data(months)
 currentMonth = dfs[currMonth]
 
 (al_standing_tables, nl_standing_tables) = create_standings()
+(batting_benchmarks, pitching_benchmarks) = create_benchmarks()
 
 # draft results
-draft_results = pd.read_csv('draft_classes.csv')
+draft_results = pd.read_csv('csv_data/draft_classes.csv')
 draft_results['HELPER'] = draft_results['HELPER'].str.replace(' ', '').str.replace('/', '-')
-
 
 # stop rounding my buttons
 pd.set_option('display.max_colwidth', -1)
@@ -681,13 +681,10 @@ def player(helper):
     name = generate_player_name(bio_series)
     bio = generate_player_header(bio_series)
     stats = generate_player_stat_string(bio_series)
-    def_rats, def_stats = generate_defense_table(def_stats, def_ratings)
+    def_rats, def_stats, best_pos = generate_defense_table(def_stats, def_ratings)
     bat_rats = generate_bat_table(bat_ratings, helper)
     pit_rats = generate_pit_table(pit_ratings, helper)
     other_rats = generate_other_table(other_ratings, helper)
-
-    # generate dev picture
-    generate_progression(helper, subset, months)
 
     # and a little text snippet of recent ratings changes
     changes = []
@@ -734,6 +731,11 @@ def player(helper):
     subset['mwar'] = subset[['bwar', 'pwar']].apply(np.max, axis=1)
     subset = subset[['index', 'Month', 'old grade', 'woba', 'woba_mean', 'fip', 'fip_mean', 'mwar_mean', 'mwar']].to_json(orient='records')
 
+    bat_levs = batting_benchmarks[[best_pos, 'lev']].rename({best_pos: 'pos'}, axis=1)
+    bat_levs = bat_levs.to_json(orient='records')
+
+    pit_levs = pitching_benchmarks[['SP', 'lev']].to_json(orient='records')
+
     return render_template('player.html', 
                             name = name, 
                             bio = bio, 
@@ -745,6 +747,8 @@ def player(helper):
                             pit_rats = pit_rats,
                             other_rats = other_rats,
                             subset = subset,
+                            bat_levs = bat_levs,
+                            pit_levs = pit_levs,
                             months = {'months': reversed_months},
                             total_change_str = total_change_str,
                             phrase = random.choice(phrases))

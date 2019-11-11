@@ -113,6 +113,8 @@
 <script type="text/javascript">
   var subset_json = JSON.parse({{subset|tojson}});
   var month_labs = {{months|tojson}}['months'];
+  var bat_benchmarks = JSON.parse({{bat_levs|tojson}});
+  var pit_benchmarks = JSON.parse({{pit_levs|tojson}});
 
   // sizing
   var svg_height = 400
@@ -354,7 +356,6 @@
      .attr("stroke-width", 0.5 * it_sz)
      .style("stroke-dasharray", ("3, 3"));
 
-
   svg3.append('path')
      .datum(subset_json)
      .attr('class', 'line')
@@ -416,4 +417,47 @@
      .attr("text-anchor", "middle")  
      .style("font-size", "24px") 
      .text("WAR");
+
+  // lines to create benchmarks
+  for(i in bat_benchmarks){ 
+    if(woba_scale(bat_benchmarks[i]['pos']) < svg_height - x_padding){
+      svg2.append('line')
+          .attr('y1', woba_scale(bat_benchmarks[i]['pos']))
+          .attr('x1', x_scale(0.25))
+          .attr('y2', woba_scale(bat_benchmarks[i]['pos']))
+          .attr('x2', x_scale(subset_json.length - 1))
+          .attr('fill', 'none')
+          .attr("stroke", color_ter)
+          .attr("stroke-width", 0.2 * it_sz)
+          .style("stroke-dasharray", ("5, 2"));
+      svg2.append('text')
+          .attr('x', x_scale(-0.1))
+          .attr('y', woba_scale(bat_benchmarks[i]['pos']) + 5)
+          .attr("text-anchor", "middle")  
+          .style("font-size", "16px") 
+          .text(bat_benchmarks[i]['lev']);
+    }
+  }
+
+  for(i in pit_benchmarks){ 
+    if(woba_scale(pit_benchmarks[i]['SP']) < svg_height - x_padding){
+      svg3.append('line')
+          .attr('y1', fip_scale(pit_benchmarks[i]['SP']))
+          .attr('x1', x_scale(0.25))
+          .attr('y2', fip_scale(pit_benchmarks[i]['SP']))
+          .attr('x2', x_scale(subset_json.length - 1))
+          .attr('fill', 'none')
+          .attr("stroke", color_ter)
+          .attr("stroke-width", 0.2 * it_sz)
+          .style("stroke-dasharray", ("5, 2"));
+      svg3.append('text')
+          .attr('x', x_scale(-0.1))
+          .attr('y', fip_scale(pit_benchmarks[i]['SP']) + 5)
+          .attr("text-anchor", "middle")  
+          .style("font-size", "16px") 
+          .text(bat_benchmarks[i]['lev']);
+    }
+  }
+
+
 </script>
