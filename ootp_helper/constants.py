@@ -31,7 +31,7 @@ FRONT_PAGE_COLS = PLAYER_DISP[1:] + ['old grade', 'og-1', 'POT', 'mwar_mean', 'm
 
 POT_COLS = ['CON P', 'GAP P', 'POW P', 'EYE P', 'K P', 'STU P', 'MOV P', 'CTL P']
 
-CLEAN_TABLES_COLS = ['HELPER', 'POS', 'Name', 'Lev', 'Age', 'old grade', 'og-1', 'POT',
+CLEAN_TABLES_COLS = ['HELPER', 'POS', 'Name', 'Lev', 'Age', 'SLR', 'YL', 'old grade', 'og-1', 'POT',
                     'mwar_mean', 'mwar-1', 'woba', 'woba_mean', 'fip', 'fip_mean'] + POT_COLS
                     
 
