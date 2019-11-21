@@ -73,9 +73,13 @@ def create_standings() -> Tuple[dict, dict]:
 	standings['diff'] = standings['W'] - standings['rW']
 	standings = standings.sort_values('pct', ascending=False)
 
-	standings['Payroll'] = standings['Payroll'].map('${:,.0f}'.format)
+	money_cols = ['Payroll', 'Budget', 'TotalRevenue', 'GateRevenue', 'SeasonTickets', 'PlayoffRevenue',
+				  'MerchRevenue', 'MediaRevenue', 'RevenueSharing', 'Cash']
 
-	standings = standings[['Team', 'division', 'Name', 'Payroll', 'W', 'L', 'pct', 'rW', 'rL', 'r_pct', 'diff']]
+	for col in money_cols:
+		standings[col] = standings[col].map('${:,.0f}'.format)
+
+	standings_subset = standings[['Team', 'division', 'Name', 'Payroll', 'W', 'L', 'pct', 'rW', 'rL', 'r_pct', 'diff']]
 
 	# empty dicts to store rendered tables
 	al_standing_tables = {}
@@ -87,10 +91,10 @@ def create_standings() -> Tuple[dict, dict]:
 	# switch for leauge/division tables
 	lg = True
 
-	al_standing_tables = render_standing_tables(['ALE', 'ALC', 'ALW'], standings, cm, lg)
-	nl_standing_tables = render_standing_tables(['NLE', 'NLC', 'NLW'], standings, cm, lg)
+	al_standing_tables = render_standing_tables(['ALE', 'ALC', 'ALW'], standings_subset, cm, lg)
+	nl_standing_tables = render_standing_tables(['NLE', 'NLC', 'NLW'], standings_subset, cm, lg)
 
-	return al_standing_tables, nl_standing_tables
+	return al_standing_tables, nl_standing_tables, standings
 
 
 def create_benchmarks() -> Tuple[pd.DataFrame, pd.DataFrame]:

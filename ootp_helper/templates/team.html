@@ -37,6 +37,25 @@
 {% else %}
 {% endif %}
 
+<br>
+
+{% if header_rec %}
+<h2> {{header_rec | safe}} </h2>
+{% else %}
+{% endif %}
+
+{% if header_fin %}
+<h2> {{header_fin}} </h2>
+{% else %}
+{% endif %}
+
+<br>
+
+{% if header_ded %}
+<h2> {{header_ded | safe}} </h2>
+{% else %}
+{% endif %}
+
 <hr></hr>
 
 {% if roster %}

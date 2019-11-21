@@ -20,7 +20,7 @@ dfs = create_player_data(months)
 
 currentMonth = dfs[currMonth]
 
-(al_standing_tables, nl_standing_tables) = create_standings()
+(al_standing_tables, nl_standing_tables, finances) = create_standings()
 (batting_benchmarks, pitching_benchmarks) = create_benchmarks()
 
 # draft results
@@ -533,15 +533,66 @@ def team(team):
     subset = currentMonth.loc[(currentMonth['TM'] == team) & (currentMonth['Lev'] == 'MLB')].sort_values('old grade', ascending=False)
     roster = clean_tables(subset, 'ml-roster')
 
-    # avoid generating line-ups for FA
+    # avoid generating line-ups, team header for FA
     if team != '-':
         pitching_table, batting_table = generate_lineup_card(subset)
+
+        team_finances = finances.loc[finances['Name']==team].iloc[0]
+        header_str_rec = '{0} - {1} ({2} Pythagorean, {3} Robit)' 
+        header_str_fin = 'Budget: {0} | Cash: {1} | Payroll: {2}'
+        header_str_ded = '${:,.0f} in dead money - <br> {}'
+
+        py_diff = team_finances['W'] - team_finances['pW']
+        r_diff = team_finances['W'] - team_finances['rW']
+
+        if py_diff > 0:
+            py_str = '<font color="green"> {} </font>'.format(py_diff)
+        else:
+            py_str = '<font color="red"> {} </font>'.format(py_diff)
+
+        if r_diff > 0:
+            r_str = '<font color="green"> {} </font>'.format(r_diff)
+        else:
+            r_str = '<font color="red"> {} </font>'.format(r_diff)
+
+        dead_money = currentMonth.loc[
+            (currentMonth['TM'] == team) & 
+            (currentMonth['POT'] < 50) & 
+            (currentMonth['old grade'] < 8) &
+            (currentMonth['SLR'] != '-')
+        ]
+
+        dead_money['SLR'] = dead_money['SLR'].apply(lambda x: float(x[1:].replace(',', '')))
+        dead_money = dead_money.sort_values('SLR', ascending=False)
+        dead_money = dead_money.loc[ dead_money['SLR'] > 1000000]
+        dead_amt =  dead_money['SLR'].sum()
+        dead_names = '<br>'.join(list(dead_money.apply(lambda x: '{} {} ({:.1f} ${:,.0f})'.format(x['POS'], x['Name'], x['old grade'], x['SLR']), axis=1)))
+
+        header_rec = header_str_rec.format(
+            team_finances['W'],
+            team_finances['L'],
+            py_str,
+            r_str
+        )
+
+        header_fin = header_str_fin.format(
+            team_finances['Budget'],
+            team_finances['Cash'], 
+            team_finances['Payroll']
+        )
+
+        header_ded = header_str_ded.format(dead_amt, dead_names)
+
     else:
         pitching_table = ''
         batting_table = ''
+        header = ''
         
     return render_template('team.html',
                             name=full_team_name[team],
+                            header_rec=header_rec,
+                            header_fin=header_fin,
+                            header_ded=header_ded,
                             team_logo='../static/team_logos/{}.png'.format(team),
                             prospects=prospects,
                             roster=roster, 
