@@ -98,8 +98,42 @@ phrases = ['Now "upgraded" to OOTP19!',
            'Fan interest is for cowards',
            'Needless code rewrites will continue until morale improves',
            'Do nothing and hope it works - Red Sox brand in real life and in game',
-           'Probably better than whatever the actual Rockies currently use']
+           'Probably better than whatever the actual Rockies currently use',
+           'Also known as "The Bigger Red Machine" or "Get a life dude"']
 
 months = ['aug27', 'jun27', 'apr27', 'mar27', 'feb27', 'jan27', 'dec26', 'nov26', 'oct26', 'aug26', 'jun26']
 currMonth = months[0]
 reversed_months = [i for i in reversed(months)]
+
+full_team_name = {
+  'CIN': 'Cincinnati Reds', 
+  'KC': 'Kansas City Royals', 
+  'MIN': 'Minnesota Twins', 
+  'PIT': 'Pittsburgh Pirates', 
+  'TB': 'Tampa Bay Rays', 
+  'CHC': 'Chicago Cubs', 
+  'DET': 'Detroit Tigers', 
+  'MIA': 'Miami Marlins', 
+  'OAK': 'Oakland Athletics', 
+  'SEA': 'Seattle Mariners', 
+  'WAS': 'Washington Nationals', 
+  'BAL': 'Baltimore Orioles', 
+  'CLE': 'Cleveland Indians', 
+  'ANA': 'Los Angeles Angels', 
+  'NYM': 'New York Mets', 
+  'SD': 'San Diego Padres', 
+  'TEX': 'Texas Rangers', 
+  'ARI': 'Arizona Diamondbacks', 
+  'CHC': 'Chicago White Sox', 
+  'HOU': 'Houston Astros', 
+  'MIL': 'Milwaukee Brewers', 
+  'PHI': 'Philadelphia Phillies', 
+  'STL': 'St. Louis Cardinals', 
+  'BOS': 'Boston Red Sox', 
+  'COL': 'Colorado Rockies', 
+  'LAD': 'Los Angeles Dodgers', 
+  'NYY': 'New York Yankees', 
+  'SF': 'San Francisco Giants', 
+  'TOR': 'Toronto Blue Jays', 
+  'ATL': 'Atlanta Braves'
+}
