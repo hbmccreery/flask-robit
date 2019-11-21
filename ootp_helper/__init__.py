@@ -541,7 +541,7 @@ def team(team):
         batting_table = ''
         
     return render_template('team.html',
-                            name=team,
+                            name=full_team_name[team],
                             team_logo='../static/team_logos/{}.png'.format(team),
                             prospects=prospects,
                             roster=roster, 
