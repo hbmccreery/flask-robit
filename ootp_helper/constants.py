@@ -33,7 +33,6 @@ POT_COLS = ['CON P', 'GAP P', 'POW P', 'EYE P', 'K P', 'STU P', 'MOV P', 'CTL P'
 
 CLEAN_TABLES_COLS = ['HELPER', 'POS', 'Name', 'Lev', 'Age', 'SLR', 'YL', 'old grade', 'og-1', 'POT',
                     'mwar_mean', 'mwar-1', 'woba', 'woba_mean', 'fip', 'fip_mean'] + POT_COLS
-                    
 
 PLAYER_SUBSET = ['Month', 'POS', 'Lev', 'Age', 'old grade', 'POT', 'mwar_mean', 'woba', 'bwar', 'woba_mean',
                  'bwar_mean', 'ip', 'fip', 'pwar', 'fip_mean', 'pwar_mean']
@@ -101,7 +100,7 @@ phrases = ['Now "upgraded" to OOTP19!',
            'Probably better than whatever the actual Rockies currently use',
            'Also known as "The Bigger Red Machine" or "Get a life dude"']
 
-months = ['aug27', 'jun27', 'apr27', 'mar27', 'feb27', 'jan27', 'dec26', 'nov26', 'oct26', 'aug26', 'jun26']
+months = ['oct27', 'aug27', 'jun27', 'apr27', 'mar27', 'feb27', 'jan27', 'dec26', 'nov26', 'oct26']
 currMonth = months[0]
 reversed_months = [i for i in reversed(months)]
 
