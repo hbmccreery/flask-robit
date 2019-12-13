@@ -135,5 +135,6 @@ full_team_name = {
   'SF': 'San Francisco Giants', 
   'TOR': 'Toronto Blue Jays', 
   'ATL': 'Atlanta Braves',
-  'LAA': 'The Los Angeles Angeles'
+  'LAA': 'The Los Angeles Angeles',
+  'FA': 'Free Agents',
 }

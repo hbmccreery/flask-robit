@@ -534,7 +534,7 @@ def team(team):
     roster = clean_tables(subset, 'ml-roster')
 
     # avoid generating line-ups, team header for FA
-    if team != '-':
+    if team != 'FA':
         pitching_table, batting_table = generate_lineup_card(subset)
 
         team_finances = finances.loc[finances['Name']==team].iloc[0]
@@ -586,7 +586,9 @@ def team(team):
     else:
         pitching_table = ''
         batting_table = ''
-        header = ''
+        header_rec='',
+        header_fin='',
+        header_ded='',
         
     return render_template('team.html',
                             name=full_team_name[team],
