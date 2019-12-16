@@ -566,7 +566,12 @@ def team(team):
         dead_money = dead_money.sort_values('SLR', ascending=False)
         dead_money = dead_money.loc[ dead_money['SLR'] > 1000000]
         dead_amt =  dead_money['SLR'].sum()
-        dead_names = '<br>'.join(list(dead_money.apply(lambda x: '{} {} ({:.1f} ${:,.0f})'.format(x['POS'], x['Name'], x['old grade'], x['SLR']), axis=1)))
+
+        if dead_money.shape[0] > 0:
+            dead_names = '<br>'.join(list(dead_money.apply(lambda x: '{} {} ({:.1f} ${:,.0f})'.format(x['POS'], x['Name'], x['old grade'], x['SLR']), axis=1)))
+        else:
+            dead_names = ''
+
 
         header_rec = header_str_rec.format(
             team_finances['W'],

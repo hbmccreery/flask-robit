@@ -57,7 +57,7 @@ TWO_DEC = ['old grade', 'og-1', 'og-2', 'POT', 'POT-1', 'POT-2', 'fip', 'fip_mea
 ONE_DEC = ['bwar', 'bwar_mean', 'pwar', 'pwar_mean'] + DEF_STAT_COLUMNS
 
 BIO_COLS = ['HELPER', 'POS', 'Name', 'TM', 'Lev', 'Age', 'INJ', 'Type', 
-            'SLR', 'YL', 'ECV', 'ETY', 'MLY', 'PROY', 'OPTU', 'ON40', 
+            'CV', 'YL', 'ECV', 'ETY', 'MLY', 'PROY', 'OPTU', 'ON40', 
             'PA', 'BB+', 'SO+', 'ISO+', 'OPS+', 'SB', 'BsR',
             'IP', 'HR9+', 'BB9+', 'K9+', 'GO+', 'ERA+', 'PPG']
 
@@ -100,7 +100,7 @@ phrases = ['Now "upgraded" to OOTP19!',
            'Probably better than whatever the actual Rockies currently use',
            'Also known as "The Bigger Red Machine" or "Get a life dude"']
 
-months = ['dec27', 'nov27', 'oct27', 'aug27', 'jun27', 'apr27', 'mar27', 'feb27', 'jan27', 'dec26', 'nov26', 'oct26']
+months = ['jan28', 'dec27', 'nov27', 'oct27', 'aug27', 'jun27', 'apr27', 'mar27', 'feb27', 'jan27', 'dec26', 'nov26', 'oct26']
 currMonth = months[0]
 reversed_months = [i for i in reversed(months)]
 

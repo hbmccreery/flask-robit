@@ -26,7 +26,7 @@ def generate_player_header(player: pd.Series) -> str:
     else:
         extension = str(player['ECV']) + '/' + str(player['ETY'])
 
-    line_two = ('<b> Contract: </b> ' + str(player['SLR']) + '/' + str(player['YL']) + 
+    line_two = ('<b> Contract: </b> ' + str(player['CV']) + '/' + str(player['YL']) + 
                 ' | <b> Extension: </b> ' + extension)
 
     line_three = ('<b> ML Yr: </b> ' + str(player['MLY']) + 
