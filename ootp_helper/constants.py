@@ -123,7 +123,7 @@ full_team_name = {
   'SD': 'San Diego Padres', 
   'TEX': 'Texas Rangers', 
   'ARI': 'Arizona Diamondbacks', 
-  'CHC': 'Chicago White Sox', 
+  'CWS': 'Chicago White Sox', 
   'HOU': 'Houston Astros', 
   'MIL': 'Milwaukee Brewers', 
   'PHI': 'Philadelphia Phillies', 
