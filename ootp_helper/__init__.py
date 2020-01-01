@@ -522,7 +522,7 @@ def team(team):
     # get players w/ OG > 5
     subset = currentMonth.loc[(currentMonth['TM'] == team) & (currentMonth['Lev'] != 'MLB') & (currentMonth['old grade'] > 5)].sort_values('old grade', ascending=False)
     # also drop old dudes w/ OG < 8 (non-propsects that have topped out)
-    subset = subset.loc[~((subset['old grade'] < 8) & (subset['Age'] >= 26))].head(5)
+    subset = subset.loc[~((subset['old grade'] < 8) & (subset['Age'] >= 26))]
     prospects = clean_tables(subset, 'farm-system')
 
     # check if there's a team
