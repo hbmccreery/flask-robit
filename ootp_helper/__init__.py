@@ -534,8 +534,11 @@ def team(team):
     roster = clean_tables(subset, 'ml-roster')
 
     # avoid generating line-ups, team header for FA
-    if False:
-        pitching_table, batting_table = generate_lineup_card(subset)
+    if team != 'FA':
+        if subset.shape[0] < 30:
+            pitching_table, batting_table = generate_lineup_card(subset)
+        else:
+            pitching_table, batting_table = '', ''
 
         team_finances = finances.loc[finances['Name']==team].iloc[0]
         header_str_rec = '{0} - {1} ({2} Pythagorean, {3} Robit)' 
