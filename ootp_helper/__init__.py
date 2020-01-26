@@ -738,7 +738,8 @@ def player(helper):
     # then build table
     name = generate_player_name(bio_series)
     bio = generate_player_header(bio_series)
-    stats = generate_player_stat_string(bio_series)
+    #stats = generate_player_stat_string(bio_series)
+    stats = ''
     def_rats, def_stats, best_pos = generate_defense_table(def_stats, def_ratings)
     bat_rats = generate_bat_table(bat_ratings, helper)
     pit_rats = generate_pit_table(pit_ratings, helper)
