@@ -12,7 +12,7 @@ def generate_defense_table(stats: pd.DataFrame, ratings: pd.DataFrame) -> str:
     stats.columns = [col.replace('_runs', '') for col in stats.columns]
 
     # engine ratings -> in game
-    stats = pd.concat([stats, ratings.apply(lambda x: ((x - 100)*.3) + 50)], axis=0)
+    stats = pd.concat([stats, ratings.apply(lambda x: x, axis=0)])#((x - 100)*.3) + 50)], axis=0)
     stats = stats.append(ratings_to_runs(stats.iloc[2]), ignore_index=True)
     stats = stats.applymap(int)
 

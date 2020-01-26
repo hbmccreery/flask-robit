@@ -129,11 +129,11 @@ def generate_lineup_card(team_df: pd.DataFrame):
     # mark off which positions they currently play
     for position in ['C', 'SS', 'CF', '2B', '3B', 'RF', 'LF', '1B']:
         if position not in ['C', '1B', 'LF']:
-            cutoff = 90
+            cutoff = 45
         elif position in ['C', 'LF']:
-            cutoff = 65
+            cutoff = 40
         else:
-            cutoff = 33
+            cutoff = 30
 
         player_df = team_df.loc[(team_df[position]>cutoff) & (team_df['optim_pos']=='-')]
 
