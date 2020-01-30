@@ -92,9 +92,15 @@ def generate_ratings_header(df: pd.DataFrame) -> str:
     num_negative_og = sum(df['og-1'] < 0)
     num_positive_war = sum(df['mwar-1'] > 0)
     num_negative_war = sum(df['mwar-1'] < 0)
+    current_war = max(current_month['bwar'], current_month['pwar'])
+    mark = highlight_mwar_change(overall_war_trend/2).replace('background-color', 'background')
+
+    if mark == '':
+        mark = 'background: #FFFFFF'
 
     if current_month['bwar_mean'] > current_month['pwar_mean']:
         adv_stat_type = 'wOBA'
+        adv_stat_now = round(current_month['woba'], 3)
         adv_stat = round(current_month['woba_mean'], 3)
         adv_stat_trend = round(sum(df['pwoba-1']), 3)
         adv_stat_positive = sum(df['pwoba-1'] > 0)
@@ -102,15 +108,15 @@ def generate_ratings_header(df: pd.DataFrame) -> str:
 
     else:
         adv_stat_type = 'fip'
+        adv_stat_now = round(current_month['fip'], 3)
         adv_stat = round(current_month['fip_mean'], 3)
         adv_stat_trend = round(sum(df['pfip-1']), 3)
         adv_stat_positive = sum(df['pfip-1'] > 0)
         adv_stat_negative = sum(df['pfip-1'] < 0)
 
-
-    ratings_header = '<h2> <mark style="{0};"> Grade {1} ({2}: +{3}, -{4}) | WAR {5} ({6}: +{7}, -{8}) | {9} {10} ({11}: +{12} -{13}) </mark> </h2>'.format(
+    ratings_header = '<h2> <mark style="{0};"> Grade {1} ({2}: +{3}, -{4}) | WAR {14}/{5} ({6}: +{7}, -{8}) | {9} {15}/{10} ({11}: +{12} -{13}) </mark> </h2>'.format(
         # rating_colors(float(current_month['POT'])).replace('background-color', 'color'),
-        highlight_mwar_change(overall_war_trend).replace('background-color', 'background'),
+        mark,
         current_month['old grade'],
         round(overall_og_trend, 1),
         num_positive_og,
@@ -123,7 +129,9 @@ def generate_ratings_header(df: pd.DataFrame) -> str:
         adv_stat,
         adv_stat_trend,
         adv_stat_positive,
-        adv_stat_negative
+        adv_stat_negative,
+        current_war,
+        adv_stat_now, 
     )
 
     return ratings_header
