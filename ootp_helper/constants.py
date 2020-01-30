@@ -34,8 +34,8 @@ POT_COLS = ['CON P', 'GAP P', 'POW P', 'EYE P', 'K P', 'STU P', 'MOV P', 'CTL P'
 CLEAN_TABLES_COLS = ['HELPER', 'POS', 'Name', 'Lev', 'Age', 'SLR', 'YL', 'old grade', 'og-1', 'POT',
                     'mwar_mean', 'mwar-1', 'woba', 'woba_mean', 'fip', 'fip_mean'] + POT_COLS
 
-PLAYER_SUBSET = ['Month', 'POS', 'Lev', 'Age', 'old grade', 'POT', 'mwar_mean', 'woba', 'bwar', 'woba_mean',
-                 'bwar_mean', 'ip', 'fip', 'pwar', 'fip_mean', 'pwar_mean']
+PLAYER_SUBSET = ['Month', 'POS', 'Lev', 'Age', 'old grade', 'og-1', 'POT', 'mwar_mean', 'mwar-1', 'woba', 'bwar', 'woba_mean',
+                 'pwoba-1', 'bwar_mean', 'ip', 'fip', 'pwar', 'fip_mean', 'pfip-1', 'pwar_mean']
 
 DEF_STAT_COLUMNS = ['C_runs', '1B_runs', '2B_runs', '3B_runs', 'SS_runs', 'LF_runs', 'CF_runs', 'RF_runs']
 

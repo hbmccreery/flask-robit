@@ -29,19 +29,23 @@
   </div>
   <hr></hr>
 
-  {% if name %}
+    {% if name %}
     <h1>  {{name|safe}}  </h1>
+    {% if rating_header %}
+    <p style="font-size:150%;"> {{rating_header|safe}} </p>
+    {% endif %}
     {% if bio %}
     <p style="font-size:150%;"> {{bio|safe}} <p>
     {% else %}
     <h2> Under construction! </h2>
     {% endif %}
-    {% if stats %}
+
+<!--     {% if stats %}
     <p style="font-size:150%;color:#AAAAAA"> {{stats|safe}} <p>
     {% else %}
     <h2> Under construction! </h2>
     {% endif %}
-
+ -->
     <div class='row' id="ratings">
       <!-- d3 code will be inserted here -->
     </div>

@@ -11,10 +11,11 @@ from itertools import product, groupby, chain
 
 from ootp_helper.constants import *
 from ootp_helper.data_reading import create_player_data, create_standings, create_benchmarks
-from ootp_helper.player.header_text import generate_player_name, generate_player_header, generate_player_stat_string
+from ootp_helper.player.header_text import generate_player_name, generate_player_header, generate_player_stat_string, generate_ratings_header
 from ootp_helper.player.run_calculators import *
 from ootp_helper.player.table_generators import *
 from ootp_helper.player.image_progression import *
+from ootp_helper.color_maps import *
 
 dfs = create_player_data(months)
 
@@ -29,84 +30,6 @@ draft_results['HELPER'] = draft_results['HELPER'].str.replace(' ', '').str.repla
 
 # stop rounding my buttons
 pd.set_option('display.max_colwidth', -1)
-
-
-def rating_colors(rat: int) -> str:
-    if type(rat) is not int and type(rat) is not float:
-        return 'background-color: #FFFFFF'
-    if rat > 70:
-        return 'background-color: #44bbdd'
-    if rat > 55:
-        return 'background-color: #117722'
-    if rat > 40:
-        return 'background-color: #eac117'
-    if rat > 25:
-        return 'background-color: #dd8033'
-    else:
-        return 'background-color: #dd0000'
-
-
-def highlight_mwar(mwar: float) -> str:
-    if type(mwar) is not int and type(mwar) is not float:
-        return 'background-color: #FFFFFF'
-    if mwar > 6.5:
-        return 'background-color: #44bbdd'
-    if mwar > 4.5:
-        return 'background-color: #117722'
-    if mwar > 3.8:
-        return 'background-color: #eac117'
-    if mwar > 3:
-        return 'background-color: #dd8033'
-    else:
-        return 'background-color: #dd0000'
-
-
-def highlight_mwar_change(delta: float) -> str:
-    if delta > 0.5:
-        return 'background-color: #44bbdd'
-    elif delta > 0.3:
-        return 'background-color: #32b632'
-    elif delta < -0.5:
-        return 'background-color: #b63932'
-    elif delta < -0.3:
-        return 'background-color: #dd8033'
-    else:
-        return ''
-
-
-def highlight_og_change(delta: float) -> str:
-    if delta > 1:
-        return 'background-color: #44bbdd'
-    elif delta > 0.5:
-        return 'background-color: #32b632'
-    elif delta < -1:
-        return 'background-color: #b63932'
-    elif delta < -0.5:
-        return 'background-color: #dd8033'
-    else:
-        return ''
-
-
-def highlight_woba(woba: float) -> str:
-    if woba < 0.3:
-        return 'background-color: transparent'
-    else:
-        # picking shades of green
-        amount_green = max(round(255 - (1500 * (woba - 0.3))), 100)
-        amount_other = max(round(255 - (3000 * (woba - 0.3))), 50)
-
-        return 'background-color: rgb({}, {}, {})'.format(amount_other, amount_green, amount_other)
-
-
-def highlight_fip(fip: float) -> str:
-    if fip > 4.5:
-        return 'background-color: transparent'
-    else:
-        # picking shades of green
-        amount_green = max(round(255 + (100 * (fip - 4.5))), 100)
-        amount_other = max(round(255 + (200 * (fip - 4.5))), 50)
-
-        return 'background-color: rgb({}, {}, {})'.format(amount_other, amount_green, amount_other)
 
 
 def generate_lineup_card(team_df: pd.DataFrame):
@@ -712,8 +635,9 @@ def player(helper):
     # gettting unique index errors b/c players will occasionally fall in the same spot
     subset = subset.reset_index().drop(columns='index')
     # subset = subset
+    subset_drop_cols = ['mwar_mean', 'mwar-1', 'og-1', 'pwoba-1', 'pfip-1']
 
-    table = subset.drop('mwar_mean', axis=1).style.applymap(
+    table = subset.drop(subset_drop_cols, axis=1).style.applymap(
         rating_colors,
         subset=['POT']
     ).applymap(
@@ -737,9 +661,9 @@ def player(helper):
 
     # then build table
     name = generate_player_name(bio_series)
+    rating_header = generate_ratings_header(subset)
     bio = generate_player_header(bio_series)
     #stats = generate_player_stat_string(bio_series)
-    stats = ''
     def_rats, def_stats, best_pos = generate_defense_table(def_stats, def_ratings)
     bat_rats = generate_bat_table(bat_ratings, helper)
     pit_rats = generate_pit_table(pit_ratings, helper)
@@ -797,8 +721,9 @@ def player(helper):
 
     return render_template('player.html', 
                             name = name, 
+                            rating_header=rating_header,    
                             bio = bio, 
-                            stats = stats, 
+                            # stats = stats, 
                             table = table, 
                             def_rats = def_rats, 
                             def_stats = def_stats, 

@@ -37,3 +37,80 @@ def defense_stat_colors(rat: int) -> str:
         return 'background-color: #dd8033'
     else:
         return 'background-color: #dd0000'
+
+def rating_colors(rat: int) -> str:
+    if type(rat) is not int and type(rat) is not float:
+        return 'background-color: #FFFFFF'
+    if rat > 70:
+        return 'background-color: #44bbdd'
+    if rat > 55:
+        return 'background-color: #117722'
+    if rat > 40:
+        return 'background-color: #eac117'
+    if rat > 25:
+        return 'background-color: #dd8033'
+    else:
+        return 'background-color: #dd0000'
+
+
+def highlight_mwar(mwar: float) -> str:
+    if type(mwar) is not int and type(mwar) is not float:
+        return 'background-color: #FFFFFF'
+    if mwar > 6.5:
+        return 'background-color: #44bbdd'
+    if mwar > 4.5:
+        return 'background-color: #117722'
+    if mwar > 3.8:
+        return 'background-color: #eac117'
+    if mwar > 3:
+        return 'background-color: #dd8033'
+    else:
+        return 'background-color: #dd0000'
+
+
+def highlight_mwar_change(delta: float) -> str:
+    if delta > 0.5:
+        return 'background-color: #44bbdd'
+    elif delta > 0.3:
+        return 'background-color: #32b632'
+    elif delta < -0.5:
+        return 'background-color: #b63932'
+    elif delta < -0.3:
+        return 'background-color: #dd8033'
+    else:
+        return ''
+
+
+def highlight_og_change(delta: float) -> str:
+    if delta > 1:
+        return 'background-color: #44bbdd'
+    elif delta > 0.5:
+        return 'background-color: #32b632'
+    elif delta < -1:
+        return 'background-color: #b63932'
+    elif delta < -0.5:
+        return 'background-color: #dd8033'
+    else:
+        return ''
+
+
+def highlight_woba(woba: float) -> str:
+    if woba < 0.3:
+        return 'background-color: transparent'
+    else:
+        # picking shades of green
+        amount_green = max(round(255 - (1500 * (woba - 0.3))), 100)
+        amount_other = max(round(255 - (3000 * (woba - 0.3))), 50)
+
+        return 'background-color: rgb({}, {}, {})'.format(amount_other, amount_green, amount_other)
+
+
+def highlight_fip(fip: float) -> str:
+    if fip > 4.5:
+        return 'background-color: transparent'
+    else:
+        # picking shades of green
+        amount_green = max(round(255 + (100 * (fip - 4.5))), 100)
+        amount_other = max(round(255 + (200 * (fip - 4.5))), 50)
+
+        return 'background-color: rgb({}, {}, {})'.format(amount_other, amount_green, amount_other)

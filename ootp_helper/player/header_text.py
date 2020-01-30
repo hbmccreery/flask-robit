@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from ootp_helper.color_maps import stat_color, pitch_color
+from ootp_helper.color_maps import *
 
 def generate_player_name(subset: pd.Series) -> str:
     if subset['ON40'] == 'Yes':
@@ -81,3 +81,49 @@ def generate_player_stat_string(player: pd.Series) -> str:
 
     return to_return
 
+
+def generate_ratings_header(df: pd.DataFrame) -> str:
+    df = df.iloc[0:4]
+
+    current_month = df.iloc[0]
+    overall_og_trend = sum(df['og-1'])
+    overall_war_trend = sum(df['mwar-1'])
+    num_positive_og = sum(df['og-1'] > 0)
+    num_negative_og = sum(df['og-1'] < 0)
+    num_positive_war = sum(df['mwar-1'] > 0)
+    num_negative_war = sum(df['mwar-1'] < 0)
+
+    if current_month['bwar_mean'] > current_month['pwar_mean']:
+        adv_stat_type = 'wOBA'
+        adv_stat = round(current_month['woba_mean'], 3)
+        adv_stat_trend = round(sum(df['pwoba-1']), 3)
+        adv_stat_positive = sum(df['pwoba-1'] > 0)
+        adv_stat_negative = sum(df['pwoba-1'] < 0)
+
+    else:
+        adv_stat_type = 'fip'
+        adv_stat = round(current_month['fip_mean'], 3)
+        adv_stat_trend = round(sum(df['pfip-1']), 3)
+        adv_stat_positive = sum(df['pfip-1'] > 0)
+        adv_stat_negative = sum(df['pfip-1'] < 0)
+
+
+    ratings_header = '<h2> <mark style="{0};"> Grade {1} ({2}: +{3}, -{4}) | WAR {5} ({6}: +{7}, -{8}) | {9} {10} ({11}: +{12} -{13}) </mark> </h2>'.format(
+        # rating_colors(float(current_month['POT'])).replace('background-color', 'color'),
+        highlight_mwar_change(overall_war_trend).replace('background-color', 'background'),
+        current_month['old grade'],
+        round(overall_og_trend, 1),
+        num_positive_og,
+        num_negative_og,
+        round(current_month['mwar_mean'], 1),
+        round(overall_war_trend, 2),
+        num_positive_war,
+        num_negative_war,
+        adv_stat_type,
+        adv_stat,
+        adv_stat_trend,
+        adv_stat_positive,
+        adv_stat_negative
+    )
+
+    return ratings_header
