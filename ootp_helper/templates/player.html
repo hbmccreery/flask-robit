@@ -50,6 +50,14 @@
       <!-- d3 code will be inserted here -->
     </div>
 
+    <div class='row' id='other_teams'>
+      {% if other_team_table %}
+      {{other_team_table|safe}}
+      {% endif %}
+    </div>
+
+    <hr></hr>
+
     <div class="row">
       <div class="column">
         {% if table %}

@@ -107,7 +107,7 @@ def generate_ratings_header(df: pd.DataFrame) -> str:
         adv_stat_negative = sum(df['pwoba-1'] < 0)
 
     else:
-        adv_stat_type = 'fip'
+        adv_stat_type = 'FIP'
         adv_stat_now = round(current_month['fip'], 3)
         adv_stat = round(current_month['fip_mean'], 3)
         adv_stat_trend = round(sum(df['pfip-1']), 3)

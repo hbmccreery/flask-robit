@@ -28,6 +28,10 @@ currentMonth = dfs[currMonth]
 draft_results = pd.read_csv('csv_data/draft_classes.csv')
 draft_results['HELPER'] = draft_results['HELPER'].str.replace(' ', '').str.replace('/', '-')
 
+# and other teams' takes
+pot_grid = pd.read_pickle('pickles/scout_takes.pickle')
+pot_grid['HELPER'] = pot_grid['HELPER'].str.replace(' ', '').str.replace('/', '-')
+
 # stop rounding my buttons
 pd.set_option('display.max_colwidth', -1)
 
@@ -703,13 +707,6 @@ def player(helper):
     # put the player subset -> json to use in d3
     # keep index as x-axis
     subset = subset.reset_index()
-
-    # if curr_mo_subset['bwar_mean'] > curr_mo_subset['pwar_mean']:
-    #     subset['secondary_pot'] = subset['woba_mean']
-    #     subset['secondary'] = subset['woba']
-    # else:
-    #     subset['secondary_pot'] = subset['fip_mean']
-    #     subset['secondary'] = subset['fip']
     
     subset['mwar'] = subset[['bwar', 'pwar']].apply(np.max, axis=1)
     subset = subset[['index', 'Month', 'old grade', 'woba', 'woba_mean', 'fip', 'fip_mean', 'mwar_mean', 'mwar']].to_json(orient='records')
@@ -718,6 +715,19 @@ def player(helper):
     bat_levs = bat_levs.to_json(orient='records')
 
     pit_levs = pitching_benchmarks[['SP', 'lev']].to_json(orient='records')
+
+    other_teams = pot_grid.loc[pot_grid['HELPER']==helper]
+    other_team_table = other_teams.drop('HELPER', axis=1).style.applymap(
+        rating_colors,
+    ).set_properties(**{
+            'text-align': 'left',
+            'padding': '15px',
+            'margin-bottom': '40px',
+            'font-size': '1.4em'
+        } 
+    ).set_table_styles(
+        [{'selector': 'th', 'props': [('font-size', '1.2em')]}]
+    ).hide_index().render()
 
     return render_template('player.html', 
                             name = name, 
@@ -733,6 +743,7 @@ def player(helper):
                             subset = subset,
                             bat_levs = bat_levs,
                             pit_levs = pit_levs,
+                            other_team_table=other_team_table,
                             months = {'months': reversed_months},
                             total_change_str = total_change_str,
                             phrase = random.choice(phrases))
