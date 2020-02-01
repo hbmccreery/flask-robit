@@ -316,13 +316,18 @@ def comp_search_results_request(helper1 = None):
 
 
 # routine to clean tables
-def clean_tables(subset, table_name, include_team=False):
+def clean_tables(subset, table_name, include_team=False, team_pot=''):
     # cleaning
     if include_team:
         insert_cols = CLEAN_TABLES_COLS[:1] + ['TM', 'rank'] + CLEAN_TABLES_COLS[1:]
-        subset = subset[insert_cols]
     else:
-        subset = subset[CLEAN_TABLES_COLS]
+        insert_cols = CLEAN_TABLES_COLS
+
+    if team_pot != '':
+        pot_ind = insert_cols.index('POT')
+        insert_cols = insert_cols[:pot_ind+1] + [team_pot] + insert_cols[pot_ind+1:]
+
+    subset = subset[insert_cols]
 
     round_three = ['woba', 'woba_mean']
     round_two = ['og-1', 'mwar-1', 'fip', 'fip_mean']
@@ -341,7 +346,7 @@ def clean_tables(subset, table_name, include_team=False):
 
     table = subset.style.applymap(
         rating_colors,
-        subset=POT_COLS + ['POT']
+        subset=POT_COLS + ['POT', team_pot]
     ).applymap(
         highlight_mwar_change,
         subset='mwar-1'
@@ -448,9 +453,18 @@ def draft_class(year: str, team: str = None):
 def team(team):
     # get players w/ OG > 5
     subset = currentMonth.loc[(currentMonth['TM'] == team) & (currentMonth['Lev'] != 'MLB') & (currentMonth['old grade'] > 5)].sort_values('old grade', ascending=False)
+
     # also drop old dudes w/ OG < 8 (non-propsects that have topped out)
     subset = subset.loc[~((subset['old grade'] < 8) & (subset['Age'] >= 26))]
-    prospects = clean_tables(subset, 'farm-system')
+
+    # if we have team's grades, pull those as well
+    if team in pot_grid.columns:
+        subset = pd.merge(subset, pot_grid[['HELPER', team]], on='HELPER')
+        team_pot = team
+    else:
+        team_pot = ''
+
+    prospects = clean_tables(subset, 'farm-system', team_pot=team_pot)
 
     # check if there's a team
     if subset.shape[0]==0:
@@ -458,7 +472,15 @@ def team(team):
 
     # then pull ML roster
     subset = currentMonth.loc[(currentMonth['TM'] == team) & (currentMonth['Lev'] == 'MLB')].sort_values('old grade', ascending=False)
-    roster = clean_tables(subset, 'ml-roster')
+
+    # if we have team's grades, pull those as well
+    if team in pot_grid.columns:
+        subset = pd.merge(subset, pot_grid[['HELPER', team]], on='HELPER')
+        team_pot = team
+    else:
+        team_pot = ''
+
+    roster = clean_tables(subset, 'ml-roster', team_pot=team_pot)
 
     # avoid generating line-ups, team header for FA
     if team != 'FA':
