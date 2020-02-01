@@ -84,3 +84,10 @@
 {% else %}
   <p> Error - no table </p>
 {% endif %}
+
+{% if other_scouts %}
+  <h3> Other Scouts </h3>
+  {{other_scouts|safe }}
+{% else %}
+  <p> Error - no table </p>
+{% endif %}

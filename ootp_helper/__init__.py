@@ -521,6 +521,29 @@ def team(team):
         header_rec='',
         header_fin='',
         header_ded='',
+
+    # other scouts takes
+    other_scouts_team = pot_grid.loc[
+        ((pot_grid['TM'].str.upper()==team) & (pot_grid['POT'] > 20))
+    ].sort_values('POT', ascending=False)
+
+    buttonStart = '<input type="button" value="Player Page" onclick="window.location.href=\'/player/'
+    buttonEnd = '\'" />'
+    other_scouts_team['HELPER'] = buttonStart + other_scouts_team['HELPER'] + buttonEnd
+
+    other_scouts_team = other_scouts_team.drop(['TM'], axis=1).style.applymap(
+        rating_colors,
+    ).set_properties(**{
+            'text-align': 'left',
+            'padding': '15px',
+            'margin-bottom': '40px',
+            'font-size': '1.4em'
+        } 
+    ).set_table_styles(
+        [{'selector': 'th', 'props': [('font-size', '1.2em')]}]
+    ).set_table_attributes(
+        "class='sortable'"
+    ).hide_index().render()
         
     return render_template('team.html',
                             name=full_team_name[team],
@@ -532,6 +555,7 @@ def team(team):
                             roster=roster, 
                             batting_table=batting_table,
                             pitching_table=pitching_table,
+                            other_scouts=other_scouts_team,
                             phrase=random.choice(phrases))
 
 
@@ -717,7 +741,8 @@ def player(helper):
     pit_levs = pitching_benchmarks[['SP', 'lev']].to_json(orient='records')
 
     other_teams = pot_grid.loc[pot_grid['HELPER']==helper]
-    other_team_table = other_teams.drop('HELPER', axis=1).style.applymap(
+
+    other_team_table = other_teams.drop(['HELPER', 'TM', 'Name'], axis=1).style.applymap(
         rating_colors,
     ).set_properties(**{
             'text-align': 'left',
