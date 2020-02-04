@@ -126,7 +126,17 @@ def generate_lineup_card(team_df: pd.DataFrame) -> Tuple[str, str]:
     ).hide_index().render()
 
     return pitching_html, batting_html
-    
+
+
+def generate_error_message(message: str):
+    return render_template(
+        'landing.html',
+        al_standings=al_standing_tables,
+        nl_standings=nl_standing_tables,
+        error=message,
+        phrase=random.choice(phrases),
+    )
+
 
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = 'supes_secrit_key'
@@ -159,12 +169,8 @@ def landing_page_team_request(team=None, pos=None, player=None, helper1=None, he
         text = request.form['player']
 
         if len(text) < 3:
-            return render_template(
-                'landing.html',
-                error='Search too short; may give too many results',
-                phrase=random.choice(phrases),
-            )
-        
+            return generate_error_message('Search too short; may give too many results')
+
         processed_text = text.lower()
         potential_players = currentMonth.loc[currentMonth['Name'].str.lower() == processed_text]
         subset = potential_players[PLAYER_DISP]
@@ -175,13 +181,12 @@ def landing_page_team_request(team=None, pos=None, player=None, helper1=None, he
             subset = potential_players[PLAYER_DISP]
 
             if len(subset['HELPER']) == 0:
-                return render_template('landing.html', error=text+' not found', phrase = random.choice(phrases))
+                return generate_error_message('{} not found'.format(text))
 
         if len(subset['HELPER']) == 1:
             return redirect('/player/{}'.format(subset['HELPER'].iloc[0]))
 
         # create button to player page
-
         subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
 
         # get HTML from table, then make table sortable
@@ -202,12 +207,8 @@ def landing_page_team_request(team=None, pos=None, player=None, helper1=None, he
         text = request.form['comparison']
 
         if len(text) < 3:
-            return render_template(
-                'landing.html',
-                error='Search too short; may give too many results',
-                phrase=random.choice(phrases),
-            )
-        
+            return generate_error_message('Search too short; may give too many results')
+
         processed_text = text.lower()
         potential_players = currentMonth.loc[currentMonth['Name'].str.lower() == processed_text]
         subset = potential_players[PLAYER_DISP]
@@ -218,7 +219,7 @@ def landing_page_team_request(team=None, pos=None, player=None, helper1=None, he
             subset = potential_players[PLAYER_DISP]
 
             if len(subset['HELPER']) == 0:
-                return render_template('landing.html', error=text+' not found', phrase = random.choice(phrases))
+                return generate_error_message('{} too short'.format(text))
 
         if len(subset['HELPER']) == 1:
             if helper1 is not None:
@@ -255,13 +256,8 @@ def landing_page_team_request(team=None, pos=None, player=None, helper1=None, he
 
         # would throw error if team was blank
         if processed_text == '':
-            return render_template(
-                'landing.html',
-                al_standings=al_standing_tables,
-                nl_standings=nl_standing_tables,
-                error='Please enter a team.',
-                phrase=random.choice(phrases),
-            )
+            return generate_error_message('Please enter a team.')
+
 
         # check to see if this is a position
         if processed_text in POS:
@@ -277,20 +273,11 @@ def landing_page_team_request(team=None, pos=None, player=None, helper1=None, he
         if any(currentMonth['TM'].str.contains(processed_text)):
             return redirect('/team/{}'.format(processed_text))
 
-        return render_template(
-            'landing.html',
-            al_standings=al_standing_tables,
-            nl_standings=nl_standing_tables,
-            error='Invalid team choice.',
-            phrase=random.choice(phrases),
-        )
+        return generate_error_message('Invalid team choice.')
 
     else:
-        return render_template(
-            'landing.html',
-            error='An error has occurred. Please berate Hugh at your convenience.',
-            phrase=random.choice(phrases),
-        )
+        return generate_error_message('An error has occurred. Please berate Hugh at your convenience.')
+
 
 
 @app.route('/search')
