@@ -181,7 +181,8 @@ def landing_page_team_request(team=None, pos=None, player=None, helper1=None, he
             return redirect('/player/{}'.format(subset['HELPER'].iloc[0]))
 
         # create button to player page
-        subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x))
+
+        subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
 
         # get HTML from table, then make table sortable
         table = subset.to_html(index=False, classes=["table-bordered", "table-striped", "table-hover"])
@@ -227,10 +228,10 @@ def landing_page_team_request(team=None, pos=None, player=None, helper1=None, he
         
         # create button to player page
         if helper1 is not None:
-            subset = BUTTON_STRING.format(helper1 + '/' + subset['HELPER'])
+            subset = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
 
         else:
-            subset['HELPER'] = BUTTON_STRING.format(subset['HELPER'])
+            subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
 
         # get HTML from table, then make table sortable
         table = subset.to_html(index=False, classes=["table-bordered", "table-striped", "table-hover"])
@@ -349,7 +350,7 @@ def clean_tables(subset, table_name, include_team=False, team_pot=''):
     subset[round_zero] = subset[round_zero].applymap(int)
 
     # create button to player page
-    subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x))
+    subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
 
     table = subset.style.applymap(
         rating_colors,
@@ -594,7 +595,7 @@ def team(team: str):
     ].sort_values('POT', ascending=False)
 
     with_bio = pd.merge(currentMonth[['HELPER', 'POS', 'Lev', 'Age', 'old grade', 'mwar_mean']], with_bio, on='HELPER')
-    with_bio['HELPER'] = with_bio['HELPER'].apply(lambda x: BUTTON_STRING.format(x))
+    with_bio['HELPER'] = with_bio['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
 
     with_bio['old grade'] = with_bio['old grade'].round(1)
     with_bio['mwar_mean'] = with_bio['mwar_mean'].round(1)
@@ -850,7 +851,7 @@ def comparison_search(helper1 = None):
 def comparison(helper1, helper2):
     players = currentMonth.loc[(currentMonth['HELPER'] == helper1) | (currentMonth['HELPER'] == helper2)]
 
-    players['HELPER'] = players['HELPER'].apply(lambda x: BUTTON_STRING.format(x))
+    players['HELPER'] = players['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
     players['Name'] = players['Name'].apply(lambda x: '<b> {} </b>'.format(x))
                         
     players = players[ALL_STAT_COLS]
