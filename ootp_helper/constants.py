@@ -34,8 +34,8 @@ POT_COLS = ['CON P', 'GAP P', 'POW P', 'EYE P', 'K P', 'STU P', 'MOV P', 'CTL P'
 CLEAN_TABLES_COLS = ['HELPER', 'POS', 'Name', 'Lev', 'Age', 'SLR', 'YL', 'old grade', 'og-1', 'POT',
                     'mwar_mean', 'mwar-1', 'woba', 'woba_mean', 'fip', 'fip_mean'] + POT_COLS
 
-PLAYER_SUBSET = ['Month', 'POS', 'Lev', 'Age', 'old grade', 'og-1', 'POT', 'mwar_mean', 'mwar-1', 'woba', 'bwar', 'woba_mean',
-                 'pwoba-1', 'bwar_mean', 'ip', 'fip', 'pwar', 'fip_mean', 'pfip-1', 'pwar_mean']
+PLAYER_SUBSET = ['Month', 'POS', 'Lev', 'Age', 'old grade', 'og-1', 'POT', 'mwar_mean', 'mwar-1', 'woba', 'bwar',
+                 'woba_mean', 'pwoba-1', 'bwar_mean', 'ip', 'fip', 'pwar', 'fip_mean', 'pfip-1', 'pwar_mean']
 
 DEF_STAT_COLUMNS = ['C_runs', '1B_runs', '2B_runs', '3B_runs', 'SS_runs', 'LF_runs', 'CF_runs', 'RF_runs']
 
@@ -57,7 +57,7 @@ TWO_DEC = ['old grade', 'og-1', 'og-2', 'POT', 'POT-1', 'POT-2', 'fip', 'fip_mea
 ONE_DEC = ['bwar', 'bwar_mean', 'pwar', 'pwar_mean'] + DEF_STAT_COLUMNS
 
 BIO_COLS = ['HELPER', 'POS', 'Name', 'TM', 'Lev', 'Age', 'INJ', 'Type', 
-            'CV', 'YL', 'ECV', 'ETY', 'MLY', 'PROY', 'OPTU', 'ON40', 
+            'CV', 'YL', 'SLR', 'ECV', 'ETY', 'MLY', 'PROY', 'OPTU', 'ON40',
             'PA', 'BB+', 'SO+', 'ISO+', 'OPS+', 'SB', 'BsR',
             'IP', 'HR9+', 'BB9+', 'K9+', 'GO+', 'ERA+', 'PPG']
 
@@ -138,3 +138,5 @@ full_team_name = {
   'LAA': 'The Los Angeles Angeles',
   'FA': 'Free Agents',
 }
+
+BUTTON_STRING = '<input type="button" value="Player Page" onclick="window.location.href=\'/player/{}\'" />'

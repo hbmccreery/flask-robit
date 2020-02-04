@@ -2,38 +2,38 @@ import pandas as pd
 import numpy as np
 from ootp_helper.color_maps import *
 
+
 def generate_player_name(subset: pd.Series) -> str:
-    if subset['ON40'] == 'Yes':
-        fourty = ' - On 40'
-    else:
-        fourty = ''
 
-    name_str = (subset['POS'] + ' ' + 
-                subset['Name'] + 
-                ' <a href="../team/' + subset['TM'] + '"> ' + subset['TM'] + '</a>' +
-                ' (' + subset['Lev'] + fourty + ')')
-
-    return name_str
+    return '{0} {1} (<a href="../team/{2}">{2}</a> {3}{4})'.format(
+        subset['POS'],
+        subset['Name'],
+        subset['TM'],
+        subset['Lev'],
+        ' - On 40' if subset['ON40'] == 'Yes' else '',
+    )
 
 
 def generate_player_header(player: pd.Series) -> str:
-    line_one = ('<b> Age: </b> ' + str(player['Age']) + 
-                ' | <b> Inj: </b>' + player['INJ'] + 
-                ' | <b> Personality: </b> ' + player['Type'])
 
-    if player['ETY'] == 0:
-        extension = 'N/A'
-    else:
-        extension = str(player['ECV']) + '/' + str(player['ETY'])
+    line_one = '<b> Age: </b> {0} | <b> Inj: </b> {1} | <b> Personality: </b> {2}'.format(
+        player['Age'],
+        player['INJ'],
+        player['Type'],
+    )
 
-    line_two = ('<b> Contract: </b> ' + str(player['CV']) + '/' + str(player['YL']) + 
-                ' | <b> Extension: </b> ' + extension)
+    line_two = '<b> Contract: </b> {0}/{1}'.format(player['SLR'], player['YL'])
 
-    line_three = ('<b> ML Yr: </b> ' + str(player['MLY']) + 
-                  ' | <b> Pro Yr: </b> ' + str(player['PROY']) + 
-                  ' | <b> Options: </b> ' + str(player['OPTU']))
+    if player['ETY'] > 0:
+        line_two = line_two + ' | <b> Extension: </b> {0}/{1}'.format(player['ECV'], player['ETY'])
 
-    return line_one + '<br/>' + line_two + '<br/>' + line_three
+    line_three = '<b> ML Yr: </b> {0} | <b> Pro Yr: </b> {1} | <b> Options: </b> {2}'.format(
+        player['MLY'],
+        player['PROY'],
+        player['OPTU']
+    )
+
+    return '<br/>'.join([line_one, line_two, line_three])
 
 
 def generate_player_stat_string(player: pd.Series) -> str:
@@ -50,13 +50,8 @@ def generate_player_stat_string(player: pd.Series) -> str:
         bbs = stat_color(player['BB+'], 'BB+')
         iso = stat_color(player['ISO+'], 'ISO+')
         sb = '{:.0f} SB'.format(player['SB'])
-        bat_stats = ('<font color="black">' + 
-                     pa + ' | ' + 
-                     ops + ' | ' + 
-                     ks + ' | ' + 
-                     bbs + ' | ' + 
-                     iso + ' | ' +
-                     sb + '</font>')
+        bat_stats = ' | '.join([pa, ops, ks, bbs, iso, sb])
+        bat_stats = '<font color="black"> {} </font>'.format(bat_stats)
 
     if player['IP'] < 5:
         pit_stats = 'Not enough IP to qualify.'
@@ -68,18 +63,13 @@ def generate_player_stat_string(player: pd.Series) -> str:
         hrs = stat_color(player['HR9+'], 'HR9+')
         grd = stat_color(player['GO+'], 'GO+')
         pit = pitch_color(player['PPG'])
-        pit_stats = (ip + ' | ' + 
-                     era + ' | ' + 
-                     ks + ' | ' + 
-                     bbs + ' | ' + 
-                     hrs + ' | ' +
-                     grd + ' | ' +
-                     pit)
-    
-    to_return = ('<b> Current bat performance: </b> ' + bat_stats + '<br/>' + 
-                 '<b> Current pit performance: </b> ' + pit_stats)
+        pit_stats = ' | '.join([ip, era, ks, bbs, hrs, grd, pit])
+        pit_stats = '<font color="black"> {} </font>'.format(pit_stats)
 
-    return to_return
+    return '<b> Current bat performance: </b> {0} <br/> <b> Current pit performance: </b> {1} '.format(
+        bat_stats,
+        pit_stats,
+    )
 
 
 def generate_ratings_header(df: pd.DataFrame) -> str:
@@ -114,8 +104,11 @@ def generate_ratings_header(df: pd.DataFrame) -> str:
         adv_stat_positive = sum(df['pfip-1'] > 0)
         adv_stat_negative = sum(df['pfip-1'] < 0)
 
-    ratings_header = '<h2> <mark style="{0};"> Grade {1} ({2}: +{3}, -{4}) | WAR {14}/{5} ({6}: +{7}, -{8}) | {9} {15}/{10} ({11}: +{12} -{13}) </mark> </h2>'.format(
-        # rating_colors(float(current_month['POT'])).replace('background-color', 'color'),
+    ratings_header = (
+        '<h2> <mark style="{0};"> Grade {1} ({2}: +{3}, -{4}) |'
+        ' WAR {14}/{5} ({6}: +{7}, -{8}) | '
+        '{9} {15}/{10} ({11}: +{12} -{13}) </mark> </h2>'
+    ).format(
         mark,
         current_month['old grade'],
         round(overall_og_trend, 1),

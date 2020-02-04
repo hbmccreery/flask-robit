@@ -57,7 +57,7 @@ def render_standing_tables(divs: list, standings: pd.DataFrame, cm, league: bool
 	return div_dict
 
 
-def create_standings() -> Tuple[dict, dict]:
+def create_standings() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 	# read standings from csv, create team link
 	standings = pd.read_csv('csv_data/finances.csv')
 
@@ -68,7 +68,7 @@ def create_standings() -> Tuple[dict, dict]:
 
 	standings['pct'] = standings['W'] / (standings['W'] + standings['L'])
 	standings['pct'] = standings['pct'].round(3)
-	standings['r_pct'] =  standings['rW'] / (standings['rW'] + standings['rL'])
+	standings['r_pct'] = standings['rW'] / (standings['rW'] + standings['rL'])
 	standings['r_pct'] = standings['r_pct'].round(3)
 	standings['diff'] = standings['W'] - standings['rW']
 	standings = standings.sort_values('pct', ascending=False)
@@ -80,10 +80,6 @@ def create_standings() -> Tuple[dict, dict]:
 		standings[col] = standings[col].map('${:,.0f}'.format)
 
 	standings_subset = standings[['Team', 'division', 'Name', 'Payroll', 'W', 'L', 'pct', 'rW', 'rL', 'r_pct', 'diff']]
-
-	# empty dicts to store rendered tables
-	al_standing_tables = {}
-	nl_standing_tables = {}
 
 	# color map for rendered tables
 	cm = sns.diverging_palette(240, 10, as_cmap=True)

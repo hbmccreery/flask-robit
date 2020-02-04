@@ -38,6 +38,7 @@ def defense_stat_colors(rat: int) -> str:
     else:
         return 'background-color: #dd0000'
 
+
 def rating_colors(rat: int) -> str:
     if type(rat) is not int and type(rat) is not float:
         return 'background-color: #FFFFFF'

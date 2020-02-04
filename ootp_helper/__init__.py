@@ -1,20 +1,17 @@
-from flask import Flask, render_template, request, redirect, session, jsonify
-import pandas as pd
+from flask import Flask, render_template, request, redirect, session
 import numpy as np
+import random
+from itertools import product, groupby
+from typing import Tuple
+
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import os
-import random
-import json
-from itertools import product, groupby, chain
 
 from ootp_helper.constants import *
 from ootp_helper.data_reading import create_player_data, create_standings, create_benchmarks
 from ootp_helper.player.header_text import generate_player_name, generate_player_header, generate_player_stat_string, generate_ratings_header
 from ootp_helper.player.run_calculators import *
 from ootp_helper.player.table_generators import *
-from ootp_helper.player.image_progression import *
 from ootp_helper.color_maps import *
 
 dfs = create_player_data(months)
@@ -36,7 +33,7 @@ pot_grid['HELPER'] = pot_grid['HELPER'].str.replace(' ', '').str.replace('/', '-
 pd.set_option('display.max_colwidth', -1)
 
 
-def generate_lineup_card(team_df: pd.DataFrame):
+def generate_lineup_card(team_df: pd.DataFrame) -> Tuple[str, str]:
     lineup_pit_cols = ['HELPER', 'Name', 'ip', 'fip', 'pwar']
 
     sp = team_df.nlargest(5, 'pwar')[lineup_pit_cols]
@@ -52,7 +49,6 @@ def generate_lineup_card(team_df: pd.DataFrame):
     team_df['pot_pos'] = ''
     team_df['pot_pos'] = team_df['pot_pos'].apply(list)
 
-
     # mark off which positions they currently play
     for position in ['C', 'SS', 'CF', '2B', '3B', 'RF', 'LF', '1B']:
         if position not in ['C', '1B', 'LF']:
@@ -62,21 +58,24 @@ def generate_lineup_card(team_df: pd.DataFrame):
         else:
             cutoff = 30
 
-        player_df = team_df.loc[(team_df[position]>cutoff) & (team_df['optim_pos']=='-')]
+        player_df = team_df.loc[(team_df[position] > cutoff) & (team_df['optim_pos'] == '-')]
 
-        for player in player_df['HELPER']:
-            team_df.loc[team_df['HELPER']==player, 'pot_pos'].iloc[0].extend([position])
+        for player_name in player_df['HELPER']:
+            team_df.loc[team_df['HELPER'] == player_name, 'pot_pos'].iloc[0].extend([position])
     
     # get all possible lineups sets of player/woba/WAR (w/ duplicates)
     # boy that is badly formatted
     potential_pairs = team_df.apply(
                         lambda x: [
-                            (y, 
-                             x['HELPER'], 
-                             x['Name'], 
-                             x['woba'], 
-                             x['bwar']
-                            ) for y in x['pot_pos']
+                            (
+                                y,
+                                x['HELPER'],
+                                x['Name'],
+                                x['woba'],
+                                x['bwar']
+                            )
+                            for y
+                            in x['pot_pos']
                         ], axis=1
                       ).tolist()
 
@@ -86,10 +85,11 @@ def generate_lineup_card(team_df: pd.DataFrame):
     ungrouped_items.sort(key=lambda x: x[0])
 
     groups = []
-    uniquekeys = []
+    unique_keys = []
+
     for key, group in groupby(ungrouped_items, lambda x: x[0]):
         groups.append(list(group))      # Store group iterator as a list
-        uniquekeys.append(key)
+        unique_keys.append(key)
         
     potential_lineups = [x for x in product(*groups)]
     
@@ -101,41 +101,46 @@ def generate_lineup_card(team_df: pd.DataFrame):
         else:
             lineup_woba.append(sum([x[3] for x in lineup]))
 
-    optim_lineup = pd.DataFrame(list(potential_lineups[np.argmax(lineup_woba)]))
-    optim_lineup.columns = ['lineup_pos', 'HELPER', 'Name', 'woba', 'bwar']
-    optim_lineup = optim_lineup.sort_values('woba', ascending=False)
+    # noinspection PyTypeChecker
+    optimal_lineup = pd.DataFrame(list(potential_lineups[np.argmax(lineup_woba)]))
+    optimal_lineup.columns = ['lineup_pos', 'HELPER', 'Name', 'woba', 'bwar']
+    optimal_lineup = optimal_lineup.sort_values('woba', ascending=False)
     
-    bench = team_df.loc[~team_df['HELPER'].isin(optim_lineup['HELPER'])].nlargest(5, 'woba', keep='last')
+    bench = team_df.loc[~team_df['HELPER'].isin(optimal_lineup['HELPER'])].nlargest(5, 'woba', keep='last')
     bench = bench[['HELPER', 'Name', 'bwar', 'woba']]
     bench['lineup_pos'] = 'PH'
     
-    batting = optim_lineup.append(bench, ignore_index=True)
+    batting = optimal_lineup.append(bench, ignore_index=True)
 
-    optim_lineup.drop('HELPER', axis=1, inplace=True)
+    optimal_lineup.drop('HELPER', axis=1, inplace=True)
 
     pitching = pitching[['POS', 'Name', 'fip', 'ip']].round(2)
     batting = batting[['lineup_pos', 'Name', 'woba', 'bwar']].round(3)
     
     pitching_html = pitching.style.set_properties(
-        **(dict(TABLE_PROPERTIES, **{'font-size':'1.5em'}))
+        **(dict(TABLE_PROPERTIES, **{'font-size': '1.5em'}))
     ).hide_index().render()
     
     batting_html = batting.style.set_properties(
-        **(dict(TABLE_PROPERTIES, **{'font-size':'1.5em'}))
+        **(dict(TABLE_PROPERTIES, **{'font-size': '1.5em'}))
     ).hide_index().render()
 
-    return [pitching_html, batting_html]
+    return pitching_html, batting_html
     
 
 app = Flask(__name__, static_url_path='/static')
-app.secret_key = 'lookIgetthatIneedonebutwhosgonnastealthis'
+app.secret_key = 'supes_secrit_key'
+
 
 @app.route('/')
 def landing_page():
-    return render_template('landing.html',
-                            al_standings = al_standing_tables,
-                            nl_standings = nl_standing_tables,
-                            phrase = random.choice(phrases))
+    return render_template(
+        'landing.html',
+        al_standings=al_standing_tables,
+        nl_standings=nl_standing_tables,
+        phrase=random.choice(phrases),
+    )
+
 
 @app.route('/', methods=['POST'])
 @app.route('/rising-prospects', methods=['POST'])
@@ -147,19 +152,21 @@ def landing_page():
 @app.route('/compare', methods=['POST'])
 @app.route('/compare/<helper1>', methods=['POST'])
 @app.route('/compare/<helper1>/<helper2>', methods=['POST'])
-def landing_page_team_request(team = None, pos = None, player = None, helper1 = None, helper2 = None):
+def landing_page_team_request(team=None, pos=None, player=None, helper1=None, helper2=None, year=None):
     
     if 'player' in request.form.keys():
         # grab text, get table of players w/ that name
         text = request.form['player']
 
         if len(text) < 3:
-            return render_template('landing.html', error='Search too short; may give too many results', phrase = random.choice(phrases))
+            return render_template(
+                'landing.html',
+                error='Search too short; may give too many results',
+                phrase=random.choice(phrases),
+            )
         
         processed_text = text.lower()
         potential_players = currentMonth.loc[currentMonth['Name'].str.lower() == processed_text]
-        #potential_players = currentColl.find({"name_lower":processed_text})
-
         subset = potential_players[PLAYER_DISP]
         
         if len(subset['HELPER']) == 0:
@@ -171,12 +178,10 @@ def landing_page_team_request(team = None, pos = None, player = None, helper1 = 
                 return render_template('landing.html', error=text+' not found', phrase = random.choice(phrases))
 
         if len(subset['HELPER']) == 1:
-            return redirect('/player/'+ subset['HELPER'].iloc[0])
+            return redirect('/player/{}'.format(subset['HELPER'].iloc[0]))
 
         # create button to player page
-        buttonStart = '<input type="button" value="Player Page" onclick="window.location.href=\'/player/'
-        buttonEnd = '\'" />'
-        subset['HELPER'] = buttonStart + subset['HELPER'] + buttonEnd
+        subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x))
 
         # get HTML from table, then make table sortable
         table = subset.to_html(index=False, classes=["table-bordered", "table-striped", "table-hover"])
@@ -196,12 +201,14 @@ def landing_page_team_request(team = None, pos = None, player = None, helper1 = 
         text = request.form['comparison']
 
         if len(text) < 3:
-            return render_template('landing.html', error='Search too short; may give too many results', phrase = random.choice(phrases))
+            return render_template(
+                'landing.html',
+                error='Search too short; may give too many results',
+                phrase=random.choice(phrases),
+            )
         
         processed_text = text.lower()
         potential_players = currentMonth.loc[currentMonth['Name'].str.lower() == processed_text]
-        #potential_players = currentColl.find({"name_lower":processed_text})
-
         subset = potential_players[PLAYER_DISP]
         
         if len(subset['HELPER']) == 0:
@@ -213,19 +220,17 @@ def landing_page_team_request(team = None, pos = None, player = None, helper1 = 
                 return render_template('landing.html', error=text+' not found', phrase = random.choice(phrases))
 
         if len(subset['HELPER']) == 1:
-            if helper1 != None:
-                return redirect('/compare/'  + helper1 + '/' + subset['HELPER'].iloc[0])
+            if helper1 is not None:
+                return redirect('/compare/' + helper1 + '/' + subset['HELPER'].iloc[0])
             
             return redirect('/compare/' + subset['HELPER'].iloc[0])
         
         # create button to player page
-        if helper1 != None:
-            buttonStart = '<input type="button" value="Compare" onclick="window.location.href=\'/compare/' + helper1 + '/'
+        if helper1 is not None:
+            subset = BUTTON_STRING.format(helper1 + '/' + subset['HELPER'])
+
         else:
-            buttonStart = '<input type="button" value="Compare" onclick="window.location.href=\'/compare/'
-            
-        buttonEnd = '\'" />'
-        subset['HELPER'] = buttonStart + subset['HELPER'] + buttonEnd
+            subset['HELPER'] = BUTTON_STRING.format(subset['HELPER'])
 
         # get HTML from table, then make table sortable
         table = subset.to_html(index=False, classes=["table-bordered", "table-striped", "table-hover"])
@@ -238,8 +243,8 @@ def landing_page_team_request(team = None, pos = None, player = None, helper1 = 
 
         session['search_results'] = table
 
-        if helper1 != None:
-            return redirect('/compsearch/' + helper1)
+        if helper1 is not None:
+            return redirect('/compsearch/{}'.format(helper1))
         else:
             return redirect('/compsearch')
 
@@ -249,70 +254,74 @@ def landing_page_team_request(team = None, pos = None, player = None, helper1 = 
 
         # would throw error if team was blank
         if processed_text == '':
-            return render_template('landing.html',
-                                   al_standings = al_standing_tables,
-                                   nl_standings = nl_standing_tables, 
-                                   error = 'Please enter a team.', 
-                                   phrase = random.choice(phrases))
+            return render_template(
+                'landing.html',
+                al_standings=al_standing_tables,
+                nl_standings=nl_standing_tables,
+                error='Please enter a team.',
+                phrase=random.choice(phrases),
+            )
 
         # check to see if this is a position
         if processed_text in POS:
-            return redirect('/pos/' + processed_text)
+            return redirect('/pos/{}'.format(processed_text))
 
         # or a draft year
         if processed_text in DRAFT_YEARS:
-            return redirect('/draft-class/' + processed_text)
+            return redirect('/draft-class/{}'.format(processed_text))
 
         if processed_text in ['RISING', 'RIS', 'R']:
             return redirect('rising-prospects')
 
         if any(currentMonth['TM'].str.contains(processed_text)):
-            return redirect('/team/' + processed_text)
+            return redirect('/team/{}'.format(processed_text))
 
-        return render_template('landing.html',
-                               al_standings = al_standing_tables,
-                               nl_standings = nl_standing_tables, 
-                               error = 'Invalid team choice.', 
-                               phrase = random.choice(phrases))
-
-    elif 'ogp' in request.form.keys():
-        OG_PERCENT = int(request.form['ogp'])
-        return render_template('landing.html', phrase = random.choice(phrases))
+        return render_template(
+            'landing.html',
+            al_standings=al_standing_tables,
+            nl_standings=nl_standing_tables,
+            error='Invalid team choice.',
+            phrase=random.choice(phrases),
+        )
 
     else:
-        return render_template('landing.html', 
-                               error='An error has occured. Please berate Hugh at your nearest convenience.',
-                               phrase = random.choice(phrases))
+        return render_template(
+            'landing.html',
+            error='An error has occurred. Please berate Hugh at your convenience.',
+            phrase=random.choice(phrases),
+        )
 
 
 @app.route('/search')
 def search_results():
     # get the search results
     table = session.get('search_results', None)
-    return render_template('player_select.html', table = table, phrase = random.choice(phrases))
+    return render_template('player_select.html', table=table, phrase=random.choice(phrases))
 
 
 @app.route('/search')
 def player_search_results_request():
     form_id = request.form['submit_button']
-    return redirect('/player/' + form_id)
+    return redirect('/player/{}'.format(form_id))
 
 
 @app.route('/compsearch')
 @app.route('/compsearch/<helper1>')
-def comp_search_results(helper1 = None):
+def comp_search_results(helper1=None):
     # get the search results
     table = session.get('search_results', None)
-    return render_template('player_select.html', table = table, phrase = random.choice(phrases))
+    return render_template('player_select.html', table=table, phrase=random.choice(phrases))
 
 
 @app.route('/compsearch')
 @app.route('/compsearch/<helper1>')
-def comp_search_results_request(helper1 = None):
+def comp_search_results_request(helper1=None):
     form_id = request.form['submit_button']
-    if helper1 != None:
-        return redirect('/compare/' + helper1 + '/' + form_id)
-    return redirect('/compare/' + form_id)
+
+    if helper1 is not None:
+        return redirect('/compare/{0}/{1}'.format(helper1, form_id))
+
+    return redirect('/compare/{}'.format(form_id))
 
 
 # routine to clean tables
@@ -340,9 +349,7 @@ def clean_tables(subset, table_name, include_team=False, team_pot=''):
     subset[round_zero] = subset[round_zero].applymap(int)
 
     # create button to player page
-    buttonStart = '<input type="button" value="Player Page" onclick="window.location.href=\'/player/'
-    buttonEnd = '\'" />'
-    subset['HELPER'] = buttonStart + subset['HELPER'] + buttonEnd
+    subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x))
 
     table = subset.style.applymap(
         rating_colors,
@@ -375,47 +382,64 @@ def clean_tables(subset, table_name, include_team=False, team_pot=''):
 
 @app.route('/rising-prospects')
 @app.route('/rising-prospects/<position>')
-def rising_prospect_page(position = None):
+def rising_prospect_page(position=None):
+
     if position is None:
         rising_players = currentMonth.loc[
             (currentMonth['Lev'] != 'MLB') & ~((currentMonth['old grade'] < 8) | (currentMonth['Age'] >= 26))
-        ].sort_values('mwar-1', ascending=False).head(20)
+        ].sort_values(
+            'mwar-1',
+            ascending=False
+        ).head(20)
+
         rising_players['rank'] = rising_players['mwar-1'].rank(ascending=False)
 
         falling_players = currentMonth.loc[
             (currentMonth['Lev'] != 'MLB') & ~((currentMonth['old grade'] < 8) | (currentMonth['Age'] >= 26))
-        ].sort_values('mwar-1', ascending=True).head(20)
+        ].sort_values(
+            'mwar-1',
+            ascending=True
+        ).head(20)
+
         falling_players['rank'] = falling_players['mwar-1'].rank()
 
         rising = clean_tables(rising_players, 'farm-system', include_team=True)
         falling = clean_tables(falling_players, 'farm-system', include_team=True)
 
-        return render_template('team.html',
-                               name='Rising',
-                               team_logo=None,
-                               prospects=falling,
-                               roster=rising,
-                               batting_table=None,
-                               pitching_table=None,
-                               phrase=random.choice(phrases))
+        return render_template(
+            'team.html',
+            name='Rising',
+            team_logo=None,
+            prospects=falling,
+            roster=rising,
+            batting_table=None,
+            pitching_table=None,
+            phrase=random.choice(phrases),
+        )
 
 
 @app.route('/draft-class/<year>')
 @app.route('/draft-class/<year>/<team>')
 def draft_class(year: str, team: str = None):
     year = int(year)
+
     # set up the info for non-team results
     year_info = draft_results.loc[draft_results['class'] == year]
     grade_min = 8
 
     if team is not None:
-        year_info = year_info.loc[year_info['team']==team.upper()]
+        year_info = year_info.loc[year_info['team'] == team.upper()]
         grade_min = 0
 
     # print(year)
-    year_info = pd.concat([year_info.set_index('HELPER'), 
-                           currentMonth.set_index('HELPER')],
-                          axis=1, join='inner').reset_index()
+    year_info = pd.concat(
+        [
+            year_info.set_index('HELPER'),
+            currentMonth.set_index('HELPER')
+        ],
+        axis=1,
+        join='inner'
+    ).reset_index()
 
     best_players = year_info.loc[year_info['old grade'] > grade_min].sort_values('mwar_mean', ascending=False)
 
@@ -428,33 +452,44 @@ def draft_class(year: str, team: str = None):
 
     player_tbl = clean_tables(best_players, 'farm-system', include_team=True)
 
-
     if team is None:
-        pivot = pd.pivot_table(year_info,
-                               values=['old grade', 'mwar_mean'],
-                               index='team')
+        pivot = pd.pivot_table(
+            year_info,
+            values=['old grade', 'mwar_mean'],
+            index='team',
+        )
+
         pivot = pivot.sort_values('mwar_mean', ascending=False).reset_index()
 
         team_tbl = pivot.style.render()
     else:
         team_tbl = None
 
-    return render_template('team.html',
-                           name=year,
-                           team_logo=None,
-                           prospects=team_tbl,
-                           roster=player_tbl,
-                           batting_table=year,
-                           pitching_table=None,
-                           phrase=random.choice(phrases))
+    return render_template(
+        'team.html',
+        name=year,
+        team_logo=None,
+        prospects=team_tbl,
+        roster=player_tbl,
+        batting_table=year,
+        pitching_table=None,
+        phrase=random.choice(phrases),
+    )
 
 
 @app.route('/team/<team>')
-def team(team):
+def team(team: str):
     # get players w/ OG > 5
-    subset = currentMonth.loc[(currentMonth['TM'] == team) & (currentMonth['Lev'] != 'MLB') & (currentMonth['old grade'] > 5)].sort_values('old grade', ascending=False)
+    subset = currentMonth.loc[
+        (currentMonth['TM'] == team) &
+        (currentMonth['Lev'] != 'MLB') &
+        (currentMonth['old grade'] > 5)
+    ].sort_values(
+        'old grade',
+        ascending=False
+    )
 
-    # also drop old dudes w/ OG < 8 (non-propsects that have topped out)
+    # also drop old dudes w/ OG < 8 (non-prospects that have topped out)
     subset = subset.loc[~((subset['old grade'] < 8) & (subset['Age'] >= 26))]
 
     # if we have team's grades, pull those as well
@@ -467,11 +502,17 @@ def team(team):
     prospects = clean_tables(subset, 'farm-system', team_pot=team_pot)
 
     # check if there's a team
-    if subset.shape[0]==0:
-        return render_template('landing.html', error='Team not found.', phrase = random.choice(phrases))
+    if subset.shape[0] == 0:
+        return render_template('landing.html', error='Team not found.', phrase=random.choice(phrases))
 
     # then pull ML roster
-    subset = currentMonth.loc[(currentMonth['TM'] == team) & (currentMonth['Lev'] == 'MLB')].sort_values('old grade', ascending=False)
+    subset = currentMonth.loc[
+        (currentMonth['TM'] == team) &
+        (currentMonth['Lev'] == 'MLB')
+    ].sort_values(
+        'old grade',
+        ascending=False
+    )
 
     # if we have team's grades, pull those as well
     if team in pot_grid.columns:
@@ -486,7 +527,7 @@ def team(team):
     if team != 'FA':
         pitching_table, batting_table = generate_lineup_card(subset)
 
-        team_finances = finances.loc[finances['Name']==team].iloc[0]
+        team_finances = finances.loc[finances['Name'] == team].iloc[0]
         header_str_rec = '{0} - {1} ({2} Pythagorean, {3} Robit)' 
         header_str_fin = 'Budget: {0} | Cash: {1} | Payroll: {2}'
         header_str_ded = '${:,.0f} in dead money - <br> {}'
@@ -513,26 +554,29 @@ def team(team):
 
         dead_money['SLR'] = dead_money['SLR'].apply(lambda x: float(x[1:].replace(',', '')))
         dead_money = dead_money.sort_values('SLR', ascending=False)
-        dead_money = dead_money.loc[ dead_money['SLR'] > 1000000]
+        dead_money = dead_money.loc[dead_money['SLR'] > 1000000]
         dead_amt =  dead_money['SLR'].sum()
 
         if dead_money.shape[0] > 0:
-            dead_names = '<br>'.join(list(dead_money.apply(lambda x: '{} {} ({:.1f} ${:,.0f})'.format(x['POS'], x['Name'], x['old grade'], x['SLR']), axis=1)))
+            salary_strings = dead_money.apply(
+                lambda x: '{} {} ({:.1f} ${:,.0f})'.format(x['POS'], x['Name'], x['old grade'], x['SLR']),
+                axis=1
+            )
+            dead_names = '<br>'.join(list(salary_strings))
         else:
             dead_names = ''
-
 
         header_rec = header_str_rec.format(
             team_finances['W'],
             team_finances['L'],
             py_str,
-            r_str
+            r_str,
         )
 
         header_fin = header_str_fin.format(
             team_finances['Budget'],
             team_finances['Cash'], 
-            team_finances['Payroll']
+            team_finances['Payroll'],
         )
 
         header_ded = header_str_ded.format(dead_amt, dead_names)
@@ -545,21 +589,30 @@ def team(team):
         header_ded='',
 
     # other scouts takes
-    other_scouts_team = pot_grid.loc[
-        ((pot_grid['TM'].str.upper()==team) & (pot_grid['POT'] > 20))
+    with_bio = pot_grid.loc[
+        ((pot_grid['TM'].str.upper() == team) & (pot_grid['POT'] > 20))
     ].sort_values('POT', ascending=False)
 
-    buttonStart = '<input type="button" value="Player Page" onclick="window.location.href=\'/player/'
-    buttonEnd = '\'" />'
-    other_scouts_team['HELPER'] = buttonStart + other_scouts_team['HELPER'] + buttonEnd
+    with_bio = pd.merge(currentMonth[['HELPER', 'POS', 'Lev', 'Age', 'old grade', 'mwar_mean']], with_bio, on='HELPER')
+    with_bio['HELPER'] = with_bio['HELPER'].apply(lambda x: BUTTON_STRING.format(x))
 
-    other_scouts_team = other_scouts_team.drop(['TM'], axis=1).style.applymap(
+    with_bio['old grade'] = with_bio['old grade'].round(1)
+    with_bio['mwar_mean'] = with_bio['mwar_mean'].round(1)
+
+    with_bio = with_bio.sort_values('POT', ascending=False).drop(
+        ['TM'], axis=1
+    ).style.applymap(
         rating_colors,
-    ).set_properties(**{
+        subset=[col for col in with_bio if col not in ['Age', 'POS', 'Lev', 'Name', 'HELPER' 'old grade', 'mwar_mean']],
+    ).applymap(
+        highlight_mwar,
+        subset=['mwar_mean']
+    ).set_properties(
+        **{
             'text-align': 'left',
             'padding': '15px',
             'margin-bottom': '40px',
-            'font-size': '1.4em'
+            'font-size': '1.4em',
         } 
     ).set_table_styles(
         [{'selector': 'th', 'props': [('font-size', '1.2em')]}]
@@ -567,75 +620,76 @@ def team(team):
         "class='sortable'"
     ).hide_index().render()
         
-    return render_template('team.html',
-                            name=full_team_name[team],
-                            header_rec=header_rec,
-                            header_fin=header_fin,
-                            header_ded=header_ded,
-                            team_logo='../static/team_logos/{}.png'.format(team),
-                            prospects=prospects,
-                            roster=roster, 
-                            batting_table=batting_table,
-                            pitching_table=pitching_table,
-                            other_scouts=other_scouts_team,
-                            phrase=random.choice(phrases))
+    return render_template(
+        'team.html',
+        name=full_team_name[team],
+        header_rec=header_rec,
+        header_fin=header_fin,
+        header_ded=header_ded,
+        team_logo='../static/team_logos/{}.png'.format(team),
+        prospects=prospects,
+        roster=roster,
+        batting_table=batting_table,
+        pitching_table=pitching_table,
+        other_scouts=with_bio,
+        phrase=random.choice(phrases),
+    )
 
 
 @app.route('/pos/<pos>')
-def pos(pos):
-    if pos == 'SP':
-        subset = currentMonth.loc[(currentMonth['ip_mean'] > 150) & (currentMonth['Lev'] != 'MLB')].sort_values('pwar_mean', ascending=False)
-        subset = subset.iloc[0:50]
-        subset.insert(loc=4, column='rank', value=subset['pwar_mean'].rank(ascending=False))
-        prospects = clean_tables(subset, 'farm-system', include_team=True)
+def pos(pos: str):
 
-        subset = currentMonth.loc[(currentMonth['ip_mean'] > 150) & (currentMonth['Lev'] == 'MLB')].sort_values('pwar_mean', ascending=False)
-        subset = subset.iloc[0:50]
-        subset.insert(loc=4, column='rank', value=subset['pwar_mean'].rank(ascending=False))
-        roster = clean_tables(subset, 'ml-roster', include_team=True)
+    ml_filter = currentMonth['Lev'] == 'MLB'
 
-    elif pos == 'RP':
-        subset = currentMonth.loc[(currentMonth['ip_mean'] < 150) & (currentMonth['Lev'] != 'MLB')].sort_values('fip_mean')
-        subset = subset.iloc[0:50]
-        subset.insert(loc=4, column='rank', value=subset['fip_mean'].rank())
-        prospects = clean_tables(subset, 'farm-system', include_team=True)
+    if pos in ['SP', 'RP']:
+        sp_filter = currentMonth['ip_mean'] > 150
 
-        subset = currentMonth.loc[(currentMonth['ip_mean'] < 150) & (currentMonth['Lev'] == 'MLB')].sort_values('pwar_mean')
-        subset = subset.iloc[0:50]
-        subset.insert(loc=4, column='rank', value=subset['fip_mean'].rank())
-        roster = clean_tables(subset, 'ml-roster', include_team=True)
+        if pos == 'SP':
+            subset = currentMonth.loc[sp_filter & ~ml_filter].sort_values('pwar_mean', ascending=False)
+            subset = subset.iloc[0:50]
+            subset.insert(loc=4, column='rank', value=subset['pwar_mean'].rank(ascending=False))
+            prospects = clean_tables(subset, 'farm-system', include_team=True)
 
-    elif pos == 'OF':
-        qual = (currentMonth['LF_runs'] > SCRATCH_LEVELS['LF']) |  (currentMonth['CF_runs'] > SCRATCH_LEVELS['CF']) |  (currentMonth['RF_runs'] > SCRATCH_LEVELS['RF'])
-        subset = currentMonth.loc[qual & (currentMonth['Lev'] != 'MLB')].sort_values('woba_mean', ascending=False)
-        subset = subset.iloc[0:50]
-        subset.insert(loc=4, column='rank', value=subset['woba_mean'].rank(ascending=False))
-        prospects = clean_tables(subset, 'farm-system', include_team=True)
+            subset = currentMonth.loc[sp_filter & ml_filter].sort_values('pwar_mean', ascending=False)
+            subset = subset.iloc[0:50]
+            subset.insert(loc=4, column='rank', value=subset['pwar_mean'].rank(ascending=False))
+            roster = clean_tables(subset, 'ml-roster', include_team=True)
 
-        subset = currentMonth.loc[qual & (currentMonth['Lev'] == 'MLB')].sort_values('woba_mean', ascending=False)
-        subset = subset.iloc[0:50]
-        subset.insert(loc=4, column='rank', value=subset['woba_mean'].rank(ascending=False))
-        roster = clean_tables(subset, 'ml-roster', include_team=True)
+        else:
+            subset = currentMonth.loc[~sp_filter & ~ml_filter].sort_values('fip_mean', ascending=True)
+            subset = subset.iloc[0:50]
+            subset.insert(loc=4, column='rank', value=subset['fip_mean'].rank(ascending=True))
+            prospects = clean_tables(subset, 'farm-system', include_team=True)
 
-    elif pos == 'IF':
-        qual = (currentMonth['2B_runs'] > SCRATCH_LEVELS['2B']) |  (currentMonth['3B_runs'] > SCRATCH_LEVELS['3B']) |  (currentMonth['SS_runs'] > SCRATCH_LEVELS['SS'])
-        subset = currentMonth.loc[qual & (currentMonth['Lev'] != 'MLB')].sort_values('woba_mean', ascending=False)
-        subset = subset.iloc[0:50]
-        subset.insert(loc=4, column='rank', value=subset['woba_mean'].rank(ascending=False))
-        prospects = clean_tables(subset, 'farm-system', include_team=True)
-
-        subset = currentMonth.loc[qual & (currentMonth['Lev'] == 'MLB')].sort_values('woba_mean', ascending=False)
-        subset = subset.iloc[0:50]
-        subset.insert(loc=4, column='rank', value=subset['woba_mean'].rank(ascending=False))
-        roster = clean_tables(subset, 'ml-roster', include_team=True)
+            subset = currentMonth.loc[~sp_filter & ml_filter].sort_values('fip_mean', ascending=True)
+            subset = subset.iloc[0:50]
+            subset.insert(loc=4, column='rank', value=subset['fip_mean'].rank(ascending=True))
+            roster = clean_tables(subset, 'ml-roster', include_team=True)
 
     else:
-        subset = currentMonth.loc[(currentMonth[pos + '_runs'] > SCRATCH_LEVELS[pos]) & (currentMonth['Lev'] != 'MLB')].sort_values('woba_mean', ascending=False)
+        if pos == 'OF':
+            position_filter = (
+                (currentMonth['LF_runs'] > SCRATCH_LEVELS['LF']) |
+                (currentMonth['CF_runs'] > SCRATCH_LEVELS['CF']) |
+                (currentMonth['RF_runs'] > SCRATCH_LEVELS['RF'])
+            )
+
+        elif pos == 'IF':
+            position_filter = (
+                (currentMonth['2B_runs'] > SCRATCH_LEVELS['2B']) |
+                (currentMonth['3B_runs'] > SCRATCH_LEVELS['3B']) |
+                (currentMonth['SS_runs'] > SCRATCH_LEVELS['SS'])
+            )
+
+        else:
+            position_filter = currentMonth[pos + '_runs'] > SCRATCH_LEVELS[pos]
+
+        subset = currentMonth.loc[position_filter & ~ml_filter].sort_values('woba_mean', ascending=False)
         subset = subset.iloc[0:50]
         subset.insert(loc=4, column='rank', value=subset['woba_mean'].rank(ascending=False))
         prospects = clean_tables(subset, 'farm-system', include_team=True)
 
-        subset = currentMonth.loc[(currentMonth[pos + '_runs'] > SCRATCH_LEVELS[pos]) & (currentMonth['Lev'] == 'MLB')].sort_values('woba_mean', ascending=False)
+        subset = currentMonth.loc[position_filter & ml_filter].sort_values('woba_mean', ascending=False)
         subset = subset.iloc[0:50]
         subset.insert(loc=4, column='rank', value=subset['woba_mean'].rank(ascending=False))
         roster = clean_tables(subset, 'ml-roster', include_team=True)
@@ -650,17 +704,14 @@ def player(helper):
 
     subset = subset[PLAYER_SUBSET]
 
-    # store the first month to make decisions on position/age later
-    curr_mo_subset = subset.iloc[0] 
-
     for month in months[1:]:
-        newLine = dfs[month]
-        newLine = newLine.loc[newLine['HELPER'] == helper]
-        newLine['Month'] = month
-        newLine = newLine[PLAYER_SUBSET]
-        subset = subset.append(newLine)
+        new_line = dfs[month]
+        new_line = new_line.loc[new_line['HELPER'] == helper]
+        new_line['Month'] = month
+        new_line = new_line[PLAYER_SUBSET]
+        subset = subset.append(new_line)
 
-    subset.insert(loc=5, column='og80', value=(subset['mwar_mean']*0.8 + subset['POT'] / 50))
+    subset.insert(loc=5, column='og80', value=(subset['mwar_mean'] * 0.8 + subset['POT'] / 50))
 
     round_three = ['woba', 'woba_mean']
     round_two = ['og80', 'fip', 'fip_mean']
@@ -670,21 +721,8 @@ def player(helper):
     subset[round_two] = subset[round_two].round(2)
     subset[round_one] = subset[round_one].round(1)
 
-
-    # get HTML from table, then make table sortable
-    # table = subset.to_html(index=False, classes=["table-bordered", "table-striped", "table-hover"])
-    # table = table[0:7] + 'id="players" ' + table[7:]
-    
-    # i = 0
-    # while table.find('<th>') != -1:
-    #     table = table.replace('<th>', '<th onclick="sortTable(' + str(i) + ', )">', 1)
-    #     i = i + 1
-
-    src = 'images\\' + helper + '.png'
-
-    # gettting unique index errors b/c players will occasionally fall in the same spot
+    # getting unique index errors b/c players will occasionally fall in the same spot
     subset = subset.reset_index().drop(columns='index')
-    # subset = subset
     subset_drop_cols = ['mwar_mean', 'mwar-1', 'og-1', 'pwoba-1', 'pfip-1']
 
     table = subset.drop(subset_drop_cols, axis=1).style.applymap(
@@ -713,11 +751,10 @@ def player(helper):
     name = generate_player_name(bio_series)
     rating_header = generate_ratings_header(subset)
     bio = generate_player_header(bio_series)
-    #stats = generate_player_stat_string(bio_series)
     def_rats, def_stats, best_pos = generate_defense_table(def_stats, def_ratings)
-    bat_rats = generate_bat_table(bat_ratings, helper)
-    pit_rats = generate_pit_table(pit_ratings, helper)
-    other_rats = generate_other_table(other_ratings, helper)
+    bat_rats = generate_rating_table(bat_ratings, True)
+    pit_rats = generate_rating_table(pit_ratings, False)
+    other_rats = generate_other_table(other_ratings)
 
     # and a little text snippet of recent ratings changes
     changes = []
@@ -742,6 +779,7 @@ def player(helper):
                     cur_mo, rating, last_ratings.iloc[0][rating], cur_ratings.iloc[0][rating]
                 )
                 changes.append(change_str)
+
             elif cur_ratings.iloc[0][rating] - last_ratings.iloc[0][rating] < -2:
                 change_str = '<font color="red"> {0}: {1} drops from {2:.3} to {3:.3} / 80.</font>'.format(
                     cur_mo, rating, last_ratings.iloc[0][rating], cur_ratings.iloc[0][rating]
@@ -755,18 +793,20 @@ def player(helper):
     subset = subset.reset_index()
     
     subset['mwar'] = subset[['bwar', 'pwar']].apply(np.max, axis=1)
-    subset = subset[['index', 'Month', 'old grade', 'woba', 'woba_mean', 'fip', 'fip_mean', 'mwar_mean', 'mwar']].to_json(orient='records')
+    columns_used = ['index', 'Month', 'old grade', 'woba', 'woba_mean', 'fip', 'fip_mean', 'mwar_mean', 'mwar']
+    subset = subset[columns_used].to_json(orient='records')
 
-    bat_levs = batting_benchmarks[[best_pos, 'lev']].rename({best_pos: 'pos'}, axis=1)
-    bat_levs = bat_levs.to_json(orient='records')
+    bat_levels = batting_benchmarks[[best_pos, 'lev']].rename({best_pos: 'pos'}, axis=1)
+    bat_levels = bat_levels.to_json(orient='records')
 
-    pit_levs = pitching_benchmarks[['SP', 'lev']].to_json(orient='records')
+    pit_levels = pitching_benchmarks[['SP', 'lev']].to_json(orient='records')
 
-    other_teams = pot_grid.loc[pot_grid['HELPER']==helper]
+    other_teams = pot_grid.loc[pot_grid['HELPER'] == helper]
 
     other_team_table = other_teams.drop(['HELPER', 'TM', 'Name'], axis=1).style.applymap(
         rating_colors,
-    ).set_properties(**{
+    ).set_properties(
+        **{
             'text-align': 'left',
             'padding': '15px',
             'margin-bottom': '40px',
@@ -776,44 +816,42 @@ def player(helper):
         [{'selector': 'th', 'props': [('font-size', '1.2em')]}]
     ).hide_index().render()
 
-    return render_template('player.html', 
-                            name = name, 
-                            rating_header=rating_header,    
-                            bio = bio, 
-                            # stats = stats, 
-                            table = table, 
-                            def_rats = def_rats, 
-                            def_stats = def_stats, 
-                            bat_rats = bat_rats,
-                            pit_rats = pit_rats,
-                            other_rats = other_rats,
-                            subset = subset,
-                            bat_levs = bat_levs,
-                            pit_levs = pit_levs,
-                            other_team_table=other_team_table,
-                            months = {'months': reversed_months},
-                            total_change_str = total_change_str,
-                            phrase = random.choice(phrases))
+    return render_template(
+        'player.html',
+        name=name,
+        rating_header=rating_header,
+        bio=bio,
+        table=table,
+        def_rats=def_rats,
+        def_stats=def_stats,
+        bat_rats=bat_rats,
+        pit_rats=pit_rats,
+        other_rats=other_rats,
+        subset=subset,
+        bat_levs=bat_levels,
+        pit_levs=pit_levels,
+        other_team_table=other_team_table,
+        months={'months': reversed_months},
+        total_change_str=total_change_str,
+        phrase=random.choice(phrases),
+    )
 
 
 @app.route('/compare')
 @app.route('/compare/<helper1>')
-def comparisonSearch(helper1 = None):
+def comparison_search(helper1 = None):
     if helper1 != None:
-        return render_template('comparisonSearch.html', name=helper1, phrase = random.choice(phrases))
+        return render_template('comparisonSearch.html', name=helper1, phrase=random.choice(phrases))
     
-    return render_template('comparisonSearch.html', phrase = random.choice(phrases))
+    return render_template('comparisonSearch.html', phrase=random.choice(phrases))
 
 
 @app.route('/compare/<helper1>/<helper2>')
 def comparison(helper1, helper2):
     players = currentMonth.loc[(currentMonth['HELPER'] == helper1) | (currentMonth['HELPER'] == helper2)]
 
-    buttonStart = '<input type="button" value="Player Page" onclick="window.location.href=\'/player/'
-    buttonEnd = '\'" />'
-    players['HELPER'] = buttonStart + players['HELPER'] + buttonEnd
-
-    players['Name'] = '<b>' + players['Name'] + '</b>'
+    players['HELPER'] = players['HELPER'].apply(lambda x: BUTTON_STRING.format(x))
+    players['Name'] = players['Name'].apply(lambda x: '<b> {} </b>'.format(x))
                         
     players = players[ALL_STAT_COLS]
 
@@ -822,8 +860,7 @@ def comparison(helper1, helper2):
     players[ONE_DEC] = players[ONE_DEC].round(1)
     
     players = players.transpose()
-    #players = players[]
-    
+
     table = players.to_html(classes=["table-bordered", "table-striped", "table-hover"], header=False)
     table = table[0:7] + 'id="players" ' + table[7:]
 
