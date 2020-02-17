@@ -24,7 +24,7 @@ def generate_player_header(player: pd.Series) -> str:
 
     line_two = '<b> Contract: </b> {0}/{1}'.format(player['SLR'], player['YL'])
 
-    if player['ETY'] > 0:
+    if player['ETY'] != 0:
         line_two = line_two + ' | <b> Extension: </b> {0}/{1}'.format(player['ECV'], player['ETY'])
 
     line_three = '<b> ML Yr: </b> {0} | <b> Pro Yr: </b> {1} | <b> Options: </b> {2}'.format(

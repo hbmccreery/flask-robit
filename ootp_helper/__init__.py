@@ -162,7 +162,7 @@ def landing_page():
 @app.route('/compare', methods=['POST'])
 @app.route('/compare/<helper1>', methods=['POST'])
 @app.route('/compare/<helper1>/<helper2>', methods=['POST'])
-def landing_page_team_request(team=None, pos=None, player=None, helper1=None, helper2=None, year=None):
+def landing_page_team_request(team =None, pos=None, player=None, helper1=None, helper2=None, year=None):
     
     if 'player' in request.form.keys():
         # grab text, get table of players w/ that name

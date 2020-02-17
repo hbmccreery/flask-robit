@@ -4,16 +4,17 @@ from typing import Tuple
 
 from ootp_helper.constants import old_to_new, TABLE_PROPERTIES
 
+
 def create_player_data(months: list) -> dict:
 	dfs = {}
 
 	# read in month-by-month
 	for month in months:
-	    df = pd.read_pickle('pickles/' + month + '.pickle')
-	    df['HELPER'] = df['HELPER'].str.replace(' ', '').str.replace('/', '-')
+		df = pd.read_pickle('pickles/' + month + '.pickle')
+		df['HELPER'] = df['HELPER'].str.replace(' ', '').str.replace('/', '-')
 
-	    df = df.fillna(0)
-	    dfs[month] = df
+		df = df.fillna(0)
+		dfs[month] = df
 
 	return dfs
 
