@@ -47,7 +47,7 @@ PIT_RAT_COLUMNS = ['STU', 'MOV', 'CTL', 'STU P', 'MOV P', 'CTL P']
 
 OTHER_RAT_COLUMNS = ['SPE', 'STE', 'RUN', 'STM']
 
-ALL_STAT_COLS = ['TM', 'Name'] + PLAYER_SUBSET[1:] + DEF_STAT_COLUMNS + ['og-1', 'og-2', 'POT-1', 'POT-2']
+ALL_STAT_COLS = ['TM', 'Name'] + PLAYER_SUBSET[1:] + DEF_STAT_COLUMNS + ['og-2', 'POT-1', 'POT-2']
 
 # rounding 
 THREE_DEC = ['woba', 'woba_mean']
@@ -100,7 +100,7 @@ phrases = ['Now "upgraded" to OOTP19!',
            'Probably better than whatever the actual Rockies currently use',
            'Also known as "The Bigger Red Machine" or "Get a life dude"']
 
-months = ['oct28', 'aug28', 'jun28', 'apr28', 'mar28', 'feb28', 'jan28', 'dec27', 'nov27', 'oct27', 'aug27', 'jun27', 'apr27']
+months = ['dec28', 'oct28', 'aug28', 'jun28', 'apr28', 'mar28', 'feb28', 'jan28', 'dec27', 'nov27', 'oct27', 'aug27', 'jun27', 'apr27']
 currMonth = months[0]
 reversed_months = [i for i in reversed(months)]
 
@@ -140,3 +140,5 @@ full_team_name = {
 }
 
 BUTTON_STRING = '<input type="button" value="Player Page" onclick="window.location.href=\'/player/{}\'" />'
+COMPARISON_SEARCH_STRING = '<input type="button" value="Player Page" onclick="window.location.href=\'/compare/{}\'" />'
+COMPARISON_PAGE_STRING = '<input type="button" value="Player Page" onclick="window.location.href=\'/compare/{0}/{1}\'" />'
