@@ -3,18 +3,17 @@ import numpy as np
 from ootp_helper.color_maps import *
 
 
-def generate_player_name(subset: pd.Series) -> str:
-
+def generate_player_name(player_record: dict) -> str:
     return '{0} {1} (<a href="../team/{2}">{2}</a> {3}{4})'.format(
-        subset['POS'],
-        subset['Name'],
-        subset['TM'],
-        subset['Lev'],
-        ' - On 40' if subset['ON40'] == 'Yes' else '',
+        player_record['POS'],
+        player_record['Name'],
+        player_record['TM'],
+        player_record['Lev'],
+        ' - On 40' if player_record['ON40'] == 'Yes' else '',
     )
 
 
-def generate_player_header(player: pd.Series) -> str:
+def generate_player_header(player: dict) -> str:
 
     line_one = '<b> Age: </b> {0} | <b> Inj: </b> {1} | <b> Personality: </b> {2}'.format(
         player['Age'],

@@ -2,35 +2,33 @@ from flask import Flask, render_template, request, redirect, session
 import numpy as np
 import random
 from itertools import product, groupby
-from typing import Tuple
+from pymongo import MongoClient
 
 import matplotlib
 matplotlib.use('Agg')
 
 from ootp_helper.constants import *
-from ootp_helper.data_reading import create_player_data, create_standings, create_benchmarks
+from ootp_helper.data_reading import create_player_data, create_standings, create_benchmarks, read_dist_data
 from ootp_helper.player.header_text import generate_player_name, generate_player_header, generate_player_stat_string, generate_ratings_header
 from ootp_helper.player.run_calculators import *
 from ootp_helper.player.table_generators import *
+from ootp_helper.position.position_utils import create_position_tables
 from ootp_helper.color_maps import *
-
-dfs = create_player_data(months)
-
-currentMonth = dfs[currMonth]
+from ootp_helper.utils import clean_tables
 
 (al_standing_tables, nl_standing_tables, finances) = create_standings()
 (batting_benchmarks, pitching_benchmarks) = create_benchmarks()
 
-# draft results
-draft_results = pd.read_csv('csv_data/draft_classes.csv')
-draft_results['HELPER'] = draft_results['HELPER'].str.replace(' ', '').str.replace('/', '-')
-
-# and other teams' takes
-pot_grid = pd.read_pickle('pickles/scout_takes.pickle')
-pot_grid['HELPER'] = pot_grid['HELPER'].str.replace(' ', '').str.replace('/', '-')
-
 # stop rounding my buttons
 pd.set_option('display.max_colwidth', -1)
+
+# database connection
+read_user = 'read_connection'
+read_pass = 'password123'
+client = MongoClient(
+    'mongodb://{0}:{1}@ds253368.mlab.com:53368/flask_robit?retryWrites=false'.format(read_user, read_pass)
+)
+db = client['flask_robit']
 
 
 def generate_lineup_card(team_df: pd.DataFrame) -> Tuple[str, str]:
@@ -154,15 +152,13 @@ def landing_page():
 
 @app.route('/', methods=['POST'])
 @app.route('/rising-prospects', methods=['POST'])
-@app.route('/draft-class/<year>', methods=['POST'])
-@app.route('/draft-class/<year>/<team>', methods=['POST'])
 @app.route('/team/<team>', methods=['POST'])
 @app.route('/pos/<pos>', methods=['POST'])
 @app.route('/player/<player>', methods=['POST'])
 @app.route('/compare', methods=['POST'])
 @app.route('/compare/<helper1>', methods=['POST'])
 @app.route('/compare/<helper1>/<helper2>', methods=['POST'])
-def landing_page_team_request(team =None, pos=None, player=None, helper1=None, helper2=None, year=None):
+def landing_page_team_request(team=None, pos=None, player=None, helper1=None, helper2=None, year=None):
     
     if 'player' in request.form.keys():
         # grab text, get table of players w/ that name
@@ -172,34 +168,16 @@ def landing_page_team_request(team =None, pos=None, player=None, helper1=None, h
             return generate_error_message('Search too short; may give too many results')
 
         processed_text = text.lower()
-        potential_players = currentMonth.loc[currentMonth['Name'].str.lower() == processed_text]
-        subset = potential_players[PLAYER_DISP]
+
+        potential_players = db[months[0]].find({'Name': {'$regex': processed_text, '$options': 'i'}}).distinct('_id')
         
-        if len(subset['HELPER']) == 0:
+        if len(potential_players) == 0:
+            return generate_error_message('{} not found'.format(text))
 
-            potential_players = currentMonth.loc[currentMonth['Name'].str.lower().str.find(processed_text) != -1]
-            subset = potential_players[PLAYER_DISP]
+        if len(potential_players) == 1:
+            return redirect('/player/{}'.format(potential_players[0]))
 
-            if len(subset['HELPER']) == 0:
-                return generate_error_message('{} not found'.format(text))
-
-        if len(subset['HELPER']) == 1:
-            return redirect('/player/{}'.format(subset['HELPER'].iloc[0]))
-
-        # create button to player page
-        subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
-
-        # get HTML from table, then make table sortable
-        table = subset.to_html(index=False, classes=["table-bordered", "table-striped", "table-hover"])
-        table = table[0:7] + 'id="players" ' + table[7:]
-
-        # find and replace right tags the pandas to_html fucked
-        table = table.replace('&lt;', '<')
-        table = table.replace('&gt;', '>')
-        table = table.replace('HELPER', 'Player Page')
-
-        session['search_results'] = table
-            
+        session['search_results'] = potential_players
         return redirect('/search')
 
     if 'comparison' in request.form.keys():
@@ -210,40 +188,18 @@ def landing_page_team_request(team =None, pos=None, player=None, helper1=None, h
             return generate_error_message('Search too short; may give too many results')
 
         processed_text = text.lower()
-        potential_players = currentMonth.loc[currentMonth['Name'].str.lower() == processed_text]
-        subset = potential_players[PLAYER_DISP]
-        
-        if len(subset['HELPER']) == 0:
+        potential_players = db[months[0]].find({'Name': {'$regex': processed_text, '$options': 'i'}}).distinct('_id')
 
-            potential_players = currentMonth.loc[currentMonth['Name'].str.lower().str.find(processed_text) != -1]
-            subset = potential_players[PLAYER_DISP]
+        if len(potential_players) == 0:
+            return generate_error_message('{} not found'.format(text))
 
-            if len(subset['HELPER']) == 0:
-                return generate_error_message('{} too short'.format(text))
-
-        if len(subset['HELPER']) == 1:
+        if len(potential_players) == 1:
             if helper1 is not None:
-                return redirect('/compare/' + helper1 + '/' + subset['HELPER'].iloc[0])
+                return redirect('/compare/{0}/{1}'.format(helper1, potential_players[0]))
             
-            return redirect('/compare/' + subset['HELPER'].iloc[0])
-        
-        # create button to player page
-        if helper1 is not None:
-            subset = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
+            return redirect('/compare/{}'.format(potential_players[0]))
 
-        else:
-            subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
-
-        # get HTML from table, then make table sortable
-        table = subset.to_html(index=False, classes=["table-bordered", "table-striped", "table-hover"])
-        table = table[0:7] + 'id="players" ' + table[7:]
-
-        # find and replace right tags the pandas to_html fucked
-        table = table.replace('&lt;', '<')
-        table = table.replace('&gt;', '>')
-        table = table.replace('HELPER', 'Player Page')
-
-        session['search_results'] = table
+        session['search_results'] = potential_players
 
         if helper1 is not None:
             return redirect('/compsearch/{}'.format(helper1))
@@ -258,19 +214,14 @@ def landing_page_team_request(team =None, pos=None, player=None, helper1=None, h
         if processed_text == '':
             return generate_error_message('Please enter a team.')
 
-
         # check to see if this is a position
         if processed_text in POS:
             return redirect('/pos/{}'.format(processed_text))
 
-        # or a draft year
-        if processed_text in DRAFT_YEARS:
-            return redirect('/draft-class/{}'.format(processed_text))
-
         if processed_text in ['RISING', 'RIS', 'R']:
             return redirect('rising-prospects')
 
-        if any(currentMonth['TM'].str.contains(processed_text)):
+        if len([x for x in db[months[0]].find({'TM': processed_text})]) > 0:
             return redirect('/team/{}'.format(processed_text))
 
         return generate_error_message('Invalid team choice.')
@@ -283,7 +234,20 @@ def landing_page_team_request(team =None, pos=None, player=None, helper1=None, h
 @app.route('/search')
 def search_results():
     # get the search results
-    table = session.get('search_results', None)
+    potential_results = session.get('search_results', None)
+
+    player_records = db[months[0]].find({'_id': {'$in': potential_results}})
+    player_df = pd.DataFrame.from_records([record for record in player_records])
+    player_df.rename({'_id': 'HELPER'}, axis=1, inplace=True)
+    player_df = player_df[PLAYER_DISP]
+    player_df['HELPER'] = player_df['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
+
+    table = player_df.to_html(index=False, classes=["table-bordered", "table-striped", "table-hover"])
+    table = table[0:7] + 'id="players" ' + table[7:]
+
+    # find and replace right tags the pandas to_html fucked
+    table = table.replace('&lt;', '<').replace('&gt;', '>').replace('HELPER', 'Player Page')
+
     return render_template('player_select.html', table=table, phrase=random.choice(phrases))
 
 
@@ -297,7 +261,24 @@ def player_search_results_request():
 @app.route('/compsearch/<helper1>')
 def comp_search_results(helper1=None):
     # get the search results
-    table = session.get('search_results', None)
+    potential_results = session.get('search_results', None)
+
+    player_records = db[months[0]].find({'_id': {'$in': potential_results}})
+    player_df = pd.DataFrame.from_records([record for record in player_records])
+    player_df.rename({'_id': 'HELPER'}, axis=1, inplace=True)
+    player_df = player_df[PLAYER_DISP]
+
+    if helper1:
+        player_df['HELPER'] = player_df['HELPER'].apply(lambda x: COMPARISON_PAGE_STRING.format(helper1, x))
+    else:
+        player_df['HELPER'] = player_df['HELPER'].apply(lambda x: COMPARISON_SEARCH_STRING.format(x))
+
+    table = player_df.to_html(index=False, classes=["table-bordered", "table-striped", "table-hover"])
+    table = table[0:7] + 'id="players" ' + table[7:]
+
+    # find and replace right tags the pandas to_html fucked
+    table = table.replace('&lt;', '<').replace('&gt;', '>').replace('HELPER', 'Player Page')
+
     return render_template('player_select.html', table=table, phrase=random.choice(phrases))
 
 
@@ -312,82 +293,36 @@ def comp_search_results_request(helper1=None):
     return redirect('/compare/{}'.format(form_id))
 
 
-# routine to clean tables
-def clean_tables(subset, table_name, include_team=False, team_pot=''):
-    # cleaning
-    if include_team:
-        insert_cols = CLEAN_TABLES_COLS[:1] + ['TM', 'rank'] + CLEAN_TABLES_COLS[1:]
-    else:
-        insert_cols = CLEAN_TABLES_COLS
-
-    if team_pot != '':
-        pot_ind = insert_cols.index('POT')
-        insert_cols = insert_cols[:pot_ind+1] + [team_pot] + insert_cols[pot_ind+1:]
-
-    subset = subset[insert_cols]
-
-    round_three = ['woba', 'woba_mean']
-    round_two = ['og-1', 'mwar-1', 'fip', 'fip_mean']
-    round_one = ['old grade', 'mwar_mean']
-    round_zero = POT_COLS + ['POT']
-
-    subset[round_three] = subset[round_three].round(3)
-    subset[round_two] = subset[round_two].round(2)
-    subset[round_one] = subset[round_one].round(1)
-    subset[round_zero] = subset[round_zero].applymap(int)
-
-    # create button to player page
-    subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
-
-    table = subset.style.applymap(
-        rating_colors,
-        subset=POT_COLS + ['POT', team_pot]
-    ).applymap(
-        highlight_mwar_change,
-        subset='mwar-1'
-    ).applymap(
-        highlight_og_change,
-        subset='og-1'
-    ).applymap(
-        highlight_mwar,
-        subset='mwar_mean'
-    ).applymap(
-        highlight_woba,
-        subset=['woba', 'woba_mean']
-    ).applymap(
-        highlight_fip,
-        subset=['fip', 'fip_mean']
-    ).set_properties(
-        **(dict(TABLE_PROPERTIES, **{'font-size':'1.3em'}))
-    ).set_table_styles(
-        [{'selector': 'th', 'props': [('font-size', '1.2em')]}]
-    ).set_table_attributes(
-        "class='sortable'"
-    ).hide_index().render()
-    
-    return table
-
-
 @app.route('/rising-prospects')
 @app.route('/rising-prospects/<position>')
 def rising_prospect_page(position=None):
 
     if position is None:
-        rising_players = currentMonth.loc[
-            (currentMonth['Lev'] != 'MLB') & ~((currentMonth['old grade'] < 8) | (currentMonth['Age'] >= 26))
-        ].sort_values(
-            'mwar-1',
-            ascending=False
-        ).head(20)
+        rising_records = db[months[0]].find({
+            'Lev': {'$ne': 'MLB'},
+            '$and': [{'old grade': {'$gte': 8}}, {'Age': {'$lte': 26}}],
+        }).sort('mwar-1', -1).limit(20)
+
+        rising_players = pd.DataFrame.from_records(
+            [record for record in rising_records]
+        ).rename(
+            {'_id': 'HELPER'},
+            axis=1,
+        )
 
         rising_players['rank'] = rising_players['mwar-1'].rank(ascending=False)
 
-        falling_players = currentMonth.loc[
-            (currentMonth['Lev'] != 'MLB') & ~((currentMonth['old grade'] < 8) | (currentMonth['Age'] >= 26))
-        ].sort_values(
-            'mwar-1',
-            ascending=True
-        ).head(20)
+        falling_records = db[months[0]].find({
+            'Lev': {'$ne': 'MLB'},
+            '$and': [{'old grade': {'$gte': 8}}, {'Age': {'$lte': 26}}],
+        }).sort('mwar-1', 1).limit(20)
+
+        falling_players = pd.DataFrame.from_records(
+            [record for record in falling_records]
+        ).rename(
+            {'_id': 'HELPER'},
+            axis=1,
+        )
 
         falling_players['rank'] = falling_players['mwar-1'].rank()
 
@@ -406,114 +341,42 @@ def rising_prospect_page(position=None):
         )
 
 
-@app.route('/draft-class/<year>')
-@app.route('/draft-class/<year>/<team>')
-def draft_class(year: str, team: str = None):
-    year = int(year)
-
-    # set up the info for non-team results
-    year_info = draft_results.loc[draft_results['class'] == year]
-    grade_min = 8
-
-    if team is not None:
-        year_info = year_info.loc[year_info['team'] == team.upper()]
-        grade_min = 0
-
-    # print(year)
-    year_info = pd.concat(
-        [
-            year_info.set_index('HELPER'),
-            currentMonth.set_index('HELPER')
-        ],
-        axis=1,
-        join='inner'
-    ).reset_index()
-
-    best_players = year_info.loc[year_info['old grade'] > grade_min].sort_values('mwar_mean', ascending=False)
-
-    while best_players.shape[0] < 50:
-        grade_min = grade_min - 1
-        best_players = year_info.loc[year_info['old grade'] > grade_min].sort_values('mwar_mean', ascending=False)
-        
-    best_players['rank'] = best_players['mwar_mean'].rank(ascending=False)
-    best_players['TM'] = best_players['team']
-
-    player_tbl = clean_tables(best_players, 'farm-system', include_team=True)
-
-    if team is None:
-        pivot = pd.pivot_table(
-            year_info,
-            values=['old grade', 'mwar_mean'],
-            index='team',
-        )
-
-        pivot = pivot.sort_values('mwar_mean', ascending=False).reset_index()
-
-        team_tbl = pivot.style.render()
-    else:
-        team_tbl = None
-
-    return render_template(
-        'team.html',
-        name=year,
-        team_logo=None,
-        prospects=team_tbl,
-        roster=player_tbl,
-        batting_table=year,
-        pitching_table=None,
-        phrase=random.choice(phrases),
-    )
-
-
 @app.route('/team/<team>')
 def team(team: str):
     # get players w/ OG > 5
-    subset = currentMonth.loc[
-        (currentMonth['TM'] == team) &
-        (currentMonth['Lev'] != 'MLB') &
-        (currentMonth['old grade'] > 5)
-    ].sort_values(
-        'old grade',
-        ascending=False
-    )
+    majors_query = db[months[0]].find({'TM': team, 'Lev': 'MLB'}).sort('old grade', -1)
+    minors_query = db[months[0]].find({
+        # on team, not MLB
+        'TM': team,
+        'Lev': {'$ne': 'MLB'},
+        # either OG > 8, POT > 35, or OG > 5 and age <= 24
+        '$or': [
+            {'old grade': {'$gte': 8}},
+            {'POT': {'$gte': 35}},
+            {'$and': [{'old grade': {'$gte': 5}}, {'Age': {'$lte': 24}}]},
+        ],
+    }).sort('old grade', -1)
 
-    # also drop old dudes w/ OG < 8 (non-prospects that have topped out)
-    subset = subset.loc[~((subset['old grade'] < 8) & (subset['Age'] >= 26))]
-
-    # if we have team's grades, pull those as well
-    if team in pot_grid.columns:
-        subset = pd.merge(subset, pot_grid[['HELPER', team]], on='HELPER')
-        team_pot = team
-    else:
-        team_pot = ''
-
-    prospects = clean_tables(subset, 'farm-system', team_pot=team_pot)
+    majors_records = [record for record in majors_query]
+    minors_records = [record for record in minors_query]
 
     # check if there's a team
-    if subset.shape[0] == 0:
+    if len(majors_records) == 0:
         return render_template('landing.html', error='Team not found.', phrase=random.choice(phrases))
 
+    minors_df = pd.DataFrame.from_records(minors_records).rename({'_id': 'HELPER'}, axis=1)
+    prospects = clean_tables(minors_df, 'farm-system')
+
     # then pull ML roster
-    subset = currentMonth.loc[
-        (currentMonth['TM'] == team) &
-        (currentMonth['Lev'] == 'MLB')
-    ].sort_values(
-        'old grade',
-        ascending=False
-    )
+    majors_df = pd.DataFrame.from_records(majors_records).rename({'_id': 'HELPER'}, axis=1)
+    roster = clean_tables(majors_df, 'ml-roster')
 
-    # if we have team's grades, pull those as well
-    if team in pot_grid.columns:
-        subset = pd.merge(subset, pot_grid[['HELPER', team]], on='HELPER')
-        team_pot = team
-    else:
-        team_pot = ''
-
-    roster = clean_tables(subset, 'ml-roster', team_pot=team_pot)
+    total_df = pd.concat([minors_df, majors_df], ignore_index=True)
 
     # avoid generating line-ups, team header for FA
     if team != 'FA':
-        pitching_table, batting_table = generate_lineup_card(subset)
+        # pitching_table, batting_table = generate_lineup_card(subset)
+        pitching_table, batting_table = '', ''
 
         team_finances = finances.loc[finances['Name'] == team].iloc[0]
         header_str_rec = '{0} - {1} ({2} Pythagorean, {3} Robit)' 
@@ -533,17 +396,16 @@ def team(team: str):
         else:
             r_str = '<font color="red"> {} </font>'.format(r_diff)
 
-        dead_money = currentMonth.loc[
-            (currentMonth['TM'] == team) & 
-            (currentMonth['POT'] < 50) & 
-            (currentMonth['old grade'] < 8) &
-            (currentMonth['SLR'] != '-')
+        dead_money = total_df.loc[
+            (total_df['POT'] < 50) &
+            (total_df['old grade'] < 8) &
+            (total_df['SLR'] != '-')
         ]
 
         dead_money['SLR'] = dead_money['SLR'].apply(lambda x: float(x[1:].replace(',', '')))
         dead_money = dead_money.sort_values('SLR', ascending=False)
         dead_money = dead_money.loc[dead_money['SLR'] > 1000000]
-        dead_amt =  dead_money['SLR'].sum()
+        dead_amt = dead_money['SLR'].sum()
 
         if dead_money.shape[0] > 0:
             salary_strings = dead_money.apply(
@@ -572,16 +434,16 @@ def team(team: str):
     else:
         pitching_table = ''
         batting_table = ''
-        header_rec='',
-        header_fin='',
-        header_ded='',
+        header_rec = '',
+        header_fin = '',
+        header_ded = '',
 
     # other scouts takes
-    with_bio = pot_grid.loc[
-        ((pot_grid['TM'].str.upper() == team) & (pot_grid['POT'] > 20))
-    ].sort_values('POT', ascending=False)
+    with_bio = [record for record in db['scout_takes'].find({'TM': team})]
+    with_bio = pd.DataFrame.from_records(with_bio)
+    with_bio.rename({'_id': 'HELPER'}, axis=1, inplace=True)
 
-    with_bio = pd.merge(currentMonth[['HELPER', 'POS', 'Lev', 'Age', 'old grade', 'mwar_mean']], with_bio, on='HELPER')
+    with_bio = pd.merge(total_df[['HELPER', 'POS', 'Lev', 'Age', 'old grade', 'mwar_mean']], with_bio, on='HELPER')
     with_bio['HELPER'] = with_bio['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
 
     with_bio['old grade'] = with_bio['old grade'].round(1)
@@ -589,13 +451,7 @@ def team(team: str):
 
     with_bio = with_bio.sort_values('POT', ascending=False).drop(
         ['TM'], axis=1
-    ).style.applymap(
-        rating_colors,
-        subset=[col for col in with_bio if col not in ['Age', 'POS', 'Lev', 'Name', 'HELPER' 'old grade', 'mwar_mean']],
-    ).applymap(
-        highlight_mwar,
-        subset=['mwar_mean']
-    ).set_properties(
+    ).style.set_properties(
         **{
             'text-align': 'left',
             'padding': '15px',
@@ -626,78 +482,53 @@ def team(team: str):
 
 @app.route('/pos/<pos>')
 def pos(pos: str):
-
-    ml_filter = currentMonth['Lev'] == 'MLB'
+    pos = pos.upper()
 
     if pos in ['SP', 'RP']:
-        sp_filter = currentMonth['ip_mean'] > 150
-
         if pos == 'SP':
-            subset = currentMonth.loc[sp_filter & ~ml_filter].sort_values('pwar_mean', ascending=False)
-            subset = subset.iloc[0:50]
-            subset.insert(loc=4, column='rank', value=subset['pwar_mean'].rank(ascending=False))
-            prospects = clean_tables(subset, 'farm-system', include_team=True)
-
-            subset = currentMonth.loc[sp_filter & ml_filter].sort_values('pwar_mean', ascending=False)
-            subset = subset.iloc[0:50]
-            subset.insert(loc=4, column='rank', value=subset['pwar_mean'].rank(ascending=False))
-            roster = clean_tables(subset, 'ml-roster', include_team=True)
+            position_filter = {'ip_mean': {'$gte': 150}}
+            sort_column = 'pwar_mean'
+            sort_order = -1
 
         else:
-            subset = currentMonth.loc[~sp_filter & ~ml_filter].sort_values('fip_mean', ascending=True)
-            subset = subset.iloc[0:50]
-            subset.insert(loc=4, column='rank', value=subset['fip_mean'].rank(ascending=True))
-            prospects = clean_tables(subset, 'farm-system', include_team=True)
-
-            subset = currentMonth.loc[~sp_filter & ml_filter].sort_values('fip_mean', ascending=True)
-            subset = subset.iloc[0:50]
-            subset.insert(loc=4, column='rank', value=subset['fip_mean'].rank(ascending=True))
-            roster = clean_tables(subset, 'ml-roster', include_team=True)
+            position_filter = {'ip_mean': {'$lte': 150}}
+            sort_column = 'fip_mean'
+            sort_order = 1
 
     else:
         if pos == 'OF':
-            position_filter = (
-                (currentMonth['LF_runs'] > SCRATCH_LEVELS['LF']) |
-                (currentMonth['CF_runs'] > SCRATCH_LEVELS['CF']) |
-                (currentMonth['RF_runs'] > SCRATCH_LEVELS['RF'])
-            )
+            position_filter = {
+                '$or': [
+                    {'LF_runs': {'$gte': SCRATCH_LEVELS['LF']}},
+                    {'CF_runs': {'$gte': SCRATCH_LEVELS['CF']}},
+                    {'CF_runs': {'$gte': SCRATCH_LEVELS['CF']}},
+                ],
+            }
 
         elif pos == 'IF':
-            position_filter = (
-                (currentMonth['2B_runs'] > SCRATCH_LEVELS['2B']) |
-                (currentMonth['3B_runs'] > SCRATCH_LEVELS['3B']) |
-                (currentMonth['SS_runs'] > SCRATCH_LEVELS['SS'])
-            )
-
+            position_filter = {
+                '$or': [
+                    {'2B_runs': {'$gte': SCRATCH_LEVELS['2B']}},
+                    {'3B_runs': {'$gte': SCRATCH_LEVELS['3B']}},
+                    {'SS_runs': {'$gte': SCRATCH_LEVELS['SS']}},
+                ],
+            }
         else:
-            position_filter = currentMonth[pos + '_runs'] > SCRATCH_LEVELS[pos]
+            position_filter = {pos + '_runs': {'$gte': SCRATCH_LEVELS[pos]}}
 
-        subset = currentMonth.loc[position_filter & ~ml_filter].sort_values('woba_mean', ascending=False)
-        subset = subset.iloc[0:50]
-        subset.insert(loc=4, column='rank', value=subset['woba_mean'].rank(ascending=False))
-        prospects = clean_tables(subset, 'farm-system', include_team=True)
+        sort_column = 'woba_mean'
+        sort_order = -1
 
-        subset = currentMonth.loc[position_filter & ml_filter].sort_values('woba_mean', ascending=False)
-        subset = subset.iloc[0:50]
-        subset.insert(loc=4, column='rank', value=subset['woba_mean'].rank(ascending=False))
-        roster = clean_tables(subset, 'ml-roster', include_team=True)
+    prospects, roster = create_position_tables(db, position_filter, sort_column, sort_order)
 
-    return render_template('team.html', name = pos, prospects = prospects, roster=roster, phrase = random.choice(phrases))
+    return render_template('team.html', name=pos, prospects=prospects, roster=roster, phrase=random.choice(phrases))
 
 
 @app.route('/player/<helper>')
 def player(helper):
-    subset = currentMonth.loc[currentMonth['HELPER'] == helper]
-    subset['Month'] = currMonth
-
-    subset = subset[PLAYER_SUBSET]
-
-    for month in months[1:]:
-        new_line = dfs[month]
-        new_line = new_line.loc[new_line['HELPER'] == helper]
-        new_line['Month'] = month
-        new_line = new_line[PLAYER_SUBSET]
-        subset = subset.append(new_line)
+    player_records = [db[month].find_one({'_id': helper}) for month in months]
+    player_records = [record for record in player_records if record is not None]
+    subset = pd.DataFrame.from_records(player_records)[PLAYER_SUBSET]
 
     subset.insert(loc=5, column='og80', value=(subset['mwar_mean'] * 0.8 + subset['POT'] / 50))
 
@@ -725,20 +556,19 @@ def player(helper):
         [{'selector': 'th', 'props': [('font-size', '1.5em')]}]
     ).hide_index().render()
 
-    # things to print
-    bio_series = currentMonth.loc[currentMonth['HELPER'] == helper].iloc[0][BIO_COLS]
-
     # get the numbers to build tables with
-    def_stats = currentMonth.loc[currentMonth['HELPER'] == helper][DEF_STAT_COLUMNS]
-    def_ratings = currentMonth.loc[currentMonth['HELPER'] == helper][DEF_RAT_COLUMNS]
-    bat_ratings = currentMonth.loc[currentMonth['HELPER'] == helper][BAT_RAT_COLUMNS]
-    pit_ratings = currentMonth.loc[currentMonth['HELPER'] == helper][PIT_RAT_COLUMNS]
-    other_ratings = currentMonth.loc[currentMonth['HELPER'] == helper][OTHER_RAT_COLUMNS]
+    current = pd.DataFrame.from_records([db[months[0]].find_one({'_id': helper})])
+
+    def_stats = current[DEF_STAT_COLUMNS]
+    def_ratings = current[DEF_RAT_COLUMNS]
+    bat_ratings = current[BAT_RAT_COLUMNS]
+    pit_ratings = current[PIT_RAT_COLUMNS]
+    other_ratings = current[OTHER_RAT_COLUMNS]
 
     # then build table
-    name = generate_player_name(bio_series)
+    name = generate_player_name(player_records[0])
     rating_header = generate_ratings_header(subset)
-    bio = generate_player_header(bio_series)
+    bio = generate_player_header(player_records[0])
     def_rats, def_stats, best_pos = generate_defense_table(def_stats, def_ratings)
     bat_rats = generate_rating_table(bat_ratings, True)
     pit_rats = generate_rating_table(pit_ratings, False)
@@ -747,32 +577,28 @@ def player(helper):
     # and a little text snippet of recent ratings changes
     changes = []
 
-    for i in range(len(months)-2):
-        cur_mo = months[i]
-        last_mo = months[i+1]
+    for i in range(len(months)-1):
 
-        total_rats = BAT_RAT_COLUMNS + PIT_RAT_COLUMNS
-        cur_df = dfs[cur_mo]
-        last_df = dfs[last_mo]
-
-        cur_ratings = cur_df.loc[cur_df['HELPER'] == helper][total_rats]
-        last_ratings = last_df.loc[last_df['HELPER'] == helper][total_rats]
-
-        if last_ratings.empty:
+        if i + 1 >= len(player_records):
             break
 
-        for rating in (BAT_RAT_COLUMNS + PIT_RAT_COLUMNS):
-            if cur_ratings.iloc[0][rating] - last_ratings.iloc[0][rating] > 2:
-                change_str = '<font color="green"> {0}: {1} improves from {2:.3} to {3:.3} / 80.</font>'.format(
-                    cur_mo, rating, last_ratings.iloc[0][rating], cur_ratings.iloc[0][rating]
-                )
-                changes.append(change_str)
+        total_rats = BAT_RAT_COLUMNS + PIT_RAT_COLUMNS
+        current_records = player_records[i]
+        last_month_records = player_records[i+1]
 
-            elif cur_ratings.iloc[0][rating] - last_ratings.iloc[0][rating] < -2:
-                change_str = '<font color="red"> {0}: {1} drops from {2:.3} to {3:.3} / 80.</font>'.format(
-                    cur_mo, rating, last_ratings.iloc[0][rating], cur_ratings.iloc[0][rating]
-                )
-                changes.append(change_str)
+        for rating in total_rats:
+            change_str = None
+
+            if current_records[rating] - last_month_records[rating] > 2:
+                change_str = '<font color="green"> {0}: {1} improves from {2:.3} to {3:.3} / 80.</font>'
+
+            elif current_records[rating] - last_month_records[rating] < -2:
+                change_str = '<font color="red"> {0}: {1} drops from {2:.3} to {3:.3} / 80.</font>'\
+
+            if change_str:
+                changes.append(change_str.format(
+                    months[i], rating, last_month_records[rating], current_records[rating]
+                ))
 
     total_change_str = '<br/>'.join(changes)
 
@@ -789,9 +615,10 @@ def player(helper):
 
     pit_levels = pitching_benchmarks[['SP', 'lev']].to_json(orient='records')
 
-    other_teams = pot_grid.loc[pot_grid['HELPER'] == helper]
+    other_teams = [record for record in db['scout_takes'].find({'_id': helper})]
+    other_teams = pd.DataFrame.from_records(other_teams)
 
-    other_team_table = other_teams.drop(['HELPER', 'TM', 'Name'], axis=1).style.applymap(
+    other_team_table = other_teams.drop(['_id', 'TM', 'Name'], axis=1).style.applymap(
         rating_colors,
     ).set_properties(
         **{
@@ -827,8 +654,8 @@ def player(helper):
 
 @app.route('/compare')
 @app.route('/compare/<helper1>')
-def comparison_search(helper1 = None):
-    if helper1 != None:
+def comparison_search(helper1=None):
+    if helper1:
         return render_template('comparisonSearch.html', name=helper1, phrase=random.choice(phrases))
     
     return render_template('comparisonSearch.html', phrase=random.choice(phrases))
@@ -836,7 +663,8 @@ def comparison_search(helper1 = None):
 
 @app.route('/compare/<helper1>/<helper2>')
 def comparison(helper1, helper2):
-    players = currentMonth.loc[(currentMonth['HELPER'] == helper1) | (currentMonth['HELPER'] == helper2)]
+    player_records = db[months[0]].find({'_id': {'$in': [helper1, helper2]}})
+    players = pd.DataFrame.from_records([x for x in player_records]).rename({'_id': 'HELPER'}, axis=1)
 
     players['HELPER'] = players['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
     players['Name'] = players['Name'].apply(lambda x: '<b> {} </b>'.format(x))

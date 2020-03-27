@@ -79,10 +79,6 @@ def generate_other_table(ratings: pd.DataFrame) -> str:
     # get rid of index
     reshaped_rats = reshaped_rats[reshaped_rats.columns[1:]]
 
-    # editor -> in game
-    reshaped_rats = reshaped_rats.apply(lambda x: ((x - 100) * 3/10) + 50)
-    reshaped_rats = reshaped_rats.apply(round)
-
     reshaped_rats.insert(0, 'Type', ['current', 'potential'])
 
     # put them into a JSON

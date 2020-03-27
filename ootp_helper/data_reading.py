@@ -1,6 +1,7 @@
 import pandas as pd
 import seaborn as sns
 from typing import Tuple
+import json
 
 from ootp_helper.constants import old_to_new, TABLE_PROPERTIES
 
@@ -99,3 +100,8 @@ def create_benchmarks() -> Tuple[pd.DataFrame, pd.DataFrame]:
 	pitching_benchmarks = pd.read_csv('csv_data/pitching_benchmarks.csv')
 
 	return batting_benchmarks, pitching_benchmarks
+
+
+def read_dist_data() -> pd.DataFrame:
+	with open('csv_data/player_dists.json', 'r') as f:
+		return pd.DataFrame(json.load(f))

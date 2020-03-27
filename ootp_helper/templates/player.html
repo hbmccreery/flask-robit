@@ -50,6 +50,15 @@
       <!-- d3 code will be inserted here -->
     </div>
 
+    <div class="row" id="dist">
+        <div class="column" id="pitching_dist">
+            <!-- d3 code will be inserted here -->
+        </div>
+        <div class="column" id="hitting_dist">
+            <!-- d3 code will be inserted here -->
+        </div>
+    </div>
+
     <div class='row' id='other_teams'>
       {% if other_team_table %}
       {{other_team_table|safe}}
@@ -80,7 +89,7 @@
         </div>
 
         {% if def_stats %}
-          <h3> Defensive Stats <h3>
+          <h3> Defensive Stats </h3>
           {{def_stats|safe }}
         {% else %}
           <p> Error - no table </p>
@@ -111,7 +120,6 @@
       </div>
     </div>
   {% else %}
-    <h1>Hello, World!</h1>
   {% endif %}
 </body>
 
@@ -119,10 +127,11 @@
 
 <script type="text/javascript">
   // do jinja things
-  var pitching_json = JSON.parse({{pit_rats|tojson}})
-  var batting_json = JSON.parse({{bat_rats|tojson}})
-  var other_json = JSON.parse({{other_rats|tojson}})
-  var def_json = JSON.parse({{def_rats|tojson}})
+  var pitching_json = JSON.parse({{pit_rats|tojson}});
+  var batting_json = JSON.parse({{bat_rats|tojson}});
+  var other_json = JSON.parse({{other_rats|tojson}});
+  var def_json = JSON.parse({{def_rats|tojson}});
+
   // then build our svg
   createSVG(pitching_json, batting_json, other_json, def_json)
 </script>
@@ -134,18 +143,18 @@
   var pit_benchmarks = JSON.parse({{pit_levs|tojson}});
 
   // sizing
-  var svg_height = 400
-  var svg_width = 600
-  var pct_pad = 0.075
-  var it_sz = 5  // items
-  var x_padding = pct_pad * svg_height - 10
-  var y_padding = pct_pad * svg_width - 10
+  var svg_height = 400;
+  var svg_width = 600;
+  var pct_pad = 0.075;
+  var it_sz = 5;  // items
+  var x_padding = pct_pad * svg_height - 10;
+  var y_padding = pct_pad * svg_width - 10;
 
   // add a background color (scheme in https://visme.co/blog/website-color-schemes/)
-  color_back = '#FFFFFF'
-  color_main = '#123C69'
-  color_sec = '#AC3B61'
-  color_ter = '#BAB2B5'
+  color_back = '#FFFFFF';
+  color_main = '#123C69';
+  color_sec = '#AC3B61';
+  color_ter = '#BAB2B5';
 
   // create our svg
   svg1 = d3.select('#development_og')
@@ -436,7 +445,7 @@
      .text("WAR");
 
   // lines to create benchmarks
-  for(i in bat_benchmarks){ 
+  for(var i in bat_benchmarks){
     if(woba_scale(bat_benchmarks[i]['pos']) < svg_height - x_padding){
       svg2.append('line')
           .attr('y1', woba_scale(bat_benchmarks[i]['pos']))
@@ -475,6 +484,58 @@
           .text(bat_benchmarks[i]['lev']);
     }
   }
+
+  {#// read in data#}
+  {#var pit_dist = {{pitching_dist|tojson}}['dist'];#}
+  {#var hit_dist = {{hitting_dist|tojson}}['dist'];#}
+  {#var defense_runs = {{def_runs|safe}};#}
+  {##}
+  {#// create svg to append d3 obj to#}
+  {#var dist_svg = d3.select('#pitching_dist')#}
+  {#                 .append('svg')#}
+  {#                 .attr('width', svg_width)#}
+  {#                 .attr('height', svg_height);#}
+  {##}
+  {#dist_svg.append('rect')#}
+  {#    .attr('width', svg_width)#}
+  {#    .attr('height', svg_height)#}
+  {#    .attr('fill', color_back);#}
+  {##}
+  {#// add axis for pitching data#}
+  {#// x-axis#}
+  {#var pit_x_scale = d3.scaleLinear()#}
+  {#                    .domain([d3.min(pit_dist), d3.max(pit_dist)])#}
+  {#                    .range([pct_pad * svg_width, (1 - pct_pad) * svg_width]);#}
+  {##}
+  {#dist_svg.append("g")#}
+  {#    .attr("transform", "translate(0," + svg_height + ")")#}
+  {#    .call(d3.axisBottom(pit_x_scale));#}
+  {##}
+  {#// add the y Axis#}
+  {#var pit_y = d3.scaleLinear()#}
+  {#          .domain([0, 0.01])#}
+  {#          .range([pct_pad*, 0]);#}
+  {##}
+  {#dist_svg.append("g")#}
+  {#    .call(d3.axisLeft(pit_y));#}
+  {##}
+  {#// Compute kernel density estimation#}
+  {#var kde = kernelDensityEstimator(kernelEpanechnikov(7), x.ticks(40));#}
+  {#var density =  kde( data.map(function(d){  return d.price; }) );#}
+  {##}
+  {#// Function to compute density#}
+  {#function kernelDensityEstimator(kernel, X) {#}
+  {#  return function(V) {#}
+  {#    return X.map(function(x) {#}
+  {#      return [x, d3.mean(V, function(v) { return kernel(x - v); })];#}
+  {#    });#}
+  {#  };#}
+  {#}#}
+  {#function kernelEpanechnikov(k) {#}
+  {#  return function(v) {#}
+  {#    return Math.abs(v /= k) <= 1 ? 0.75 * (1 - v * v) / k : 0;#}
+  {#  };#}
+  {#}#}
 
 
 </script>
