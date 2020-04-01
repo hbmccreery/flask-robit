@@ -4,16 +4,23 @@ from ootp_helper.color_maps import *
 
 
 def generate_player_name(player_record: dict) -> str:
-    return '{0} {1} (<a href="../team/{2}">{2}</a> {3}{4})'.format(
+    return '{0} {1} (<a href="../team/{2}">{2}</a> {3}) {4} {5}'.format(
         player_record['POS'],
         player_record['Name'],
         player_record['TM'],
         player_record['Lev'],
+        '<i>"{}"</i>'.format(player_record['Nickname']) if player_record['Nickname'] != '' else '',
         ' - On 40' if player_record['ON40'] == 'Yes' else '',
     )
 
 
 def generate_player_header(player: dict) -> str:
+    line_zero = '<b> HT:</b> {0} | <b> WT:</b> {1} | <b> B/T</b> {2}/{3}'.format(
+        player['HT'],
+        player['WT'],
+        player['B'],
+        player['T']
+    )
 
     line_one = '<b> Age: </b> {0} | <b> Inj: </b> {1} | <b> Personality: </b> {2}'.format(
         player['Age'],
@@ -21,18 +28,23 @@ def generate_player_header(player: dict) -> str:
         player['Type'],
     )
 
-    line_two = '<b> Contract: </b> {0}/{1}'.format(player['SLR'], player['YL'])
+    line_two = '<b> Leadership: </b> {0} | <b> Loyalty: </b> {1} | <b> Adaptability: </b> {2} | ' \
+               '<b> Greed: </b> {3} | <b> Work Ethic: </b> {4}'.format(
+        player['LEA'], player['LOY'], player['AD'], player['GRE'], player['WE'],
+    )
+
+    line_three = '<b> Contract: </b> {0}/{1}'.format(player['SLR'], player['YL'])
 
     if player['ETY'] != 0:
-        line_two = line_two + ' | <b> Extension: </b> {0}/{1}'.format(player['ECV'], player['ETY'])
+        line_three = line_three + ' | <b> Extension: </b> {0}/{1}'.format(player['ECV'], player['ETY'])
 
-    line_three = '<b> ML Yr: </b> {0} | <b> Pro Yr: </b> {1} | <b> Options: </b> {2}'.format(
+    line_four = '<b> ML Yr: </b> {0} | <b> Pro Yr: </b> {1} | <b> Options: </b> {2}'.format(
         player['MLY'],
         player['PROY'],
         player['OPTU']
     )
 
-    return '<br/>'.join([line_one, line_two, line_three])
+    return '<br/>'.join([line_zero, line_one, line_two, line_three, line_four])
 
 
 def generate_player_stat_string(player: pd.Series) -> str:
@@ -82,7 +94,7 @@ def generate_ratings_header(df: pd.DataFrame) -> str:
     num_positive_war = sum(df['mwar-1'] > 0)
     num_negative_war = sum(df['mwar-1'] < 0)
     current_war = max(current_month['bwar'], current_month['pwar'])
-    mark = highlight_mwar_change(overall_war_trend/2).replace('background-color', 'background')
+    mark = highlight_mwar_change(overall_war_trend / 2).replace('background-color', 'background')
 
     if mark == '':
         mark = 'background: #FFFFFF'
@@ -123,7 +135,7 @@ def generate_ratings_header(df: pd.DataFrame) -> str:
         adv_stat_positive,
         adv_stat_negative,
         current_war,
-        adv_stat_now, 
+        adv_stat_now,
     )
 
     return ratings_header
