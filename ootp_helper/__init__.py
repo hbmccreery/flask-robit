@@ -455,21 +455,26 @@ def team(team: str):
 
     with_bio['old grade'] = with_bio['old grade'].round(1)
     with_bio['mwar_mean'] = with_bio['mwar_mean'].round(1)
+    with_bio.drop('TM', axis=1, inplace=True)
 
-    with_bio = with_bio.sort_values('POT', ascending=False).drop(
-        ['TM'], axis=1
-    ).style.set_properties(
-        **{
-            'text-align': 'left',
-            'padding': '15px',
-            'margin-bottom': '40px',
-            'font-size': '1.4em',
-        } 
-    ).set_table_styles(
-        [{'selector': 'th', 'props': [('font-size', '1.2em')]}]
-    ).set_table_attributes(
-        "class='sortable'"
-    ).hide_index().render()
+    # with_bio = with_bio.sort_values('POT', ascending=False).drop(
+    #     ['TM'], axis=1
+    # ).style.set_properties(
+    #     **{
+    #         'text-align': 'left',
+    #         'padding': '15px',
+    #         'margin-bottom': '40px',
+    #         'font-size': '1.4em',
+    #     }
+    # ).set_table_styles(
+    #     [{'selector': 'th', 'props': [('font-size', '1.2em')]}]
+    # ).set_table_attributes(
+    #     "class='sortable'"
+    # ).hide_index().render()
+
+    other_scouts_columns = list(with_bio.columns)
+    other_scouts_columns = ['' if col == 'HELPER' else col for col in other_scouts_columns]
+    other_scouts_data = with_bio.values.tolist()
         
     return render_template(
         'team.html',
@@ -482,7 +487,8 @@ def team(team: str):
         roster=roster,
         batting_table=batting_table,
         pitching_table=pitching_table,
-        other_scouts=with_bio,
+        other_scouts_columns=other_scouts_columns,
+        other_scouts_data=other_scouts_data,
         phrase=random.choice(phrases),
     )
 

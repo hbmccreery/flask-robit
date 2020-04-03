@@ -2,6 +2,9 @@
 <link rel= "stylesheet" type= "text/css" href= "../static/styles/style.css">
 <script src="../static/sorttable.js"></script>
 <title>Team Info</title>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css"/>
+<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+<script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
 
 <h1> <a href = "../"><img src="../static/bender.png", width="5%"> OOTP Robit</a></h1>
 <h2> {% if phrase %} {{phrase}} {% else %} This would say something witty, but Hugh is dumb {% endif %}</h2>
@@ -84,10 +87,67 @@
 {% else %}
   <p> Error - no table </p>
 {% endif %}
+<hr/>
+<table id="other-scout-ratings" class="display compact" style="width:100%"></table>
+<script>
+    let colNames = {{ other_scouts_columns|safe }};
+    let dataSet = {{ other_scouts_data|safe }};
 
-{% if other_scouts %}
-  <h3> Other Scouts </h3>
-  {{other_scouts|safe }}
-{% else %}
-  <p> Error - no table </p>
-{% endif %}
+    let columns = colNames.map(function(item) {return {title: item}});
+    let colDefs = [{
+            targets: [-1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13],
+            createdCell: function (td, cellData, rowData, row, col) {
+                if(cellData < 25){
+                    $(td).css('background-color', '#dd0000')
+                } else if(cellData < 40){
+                    $(td).css('background-color', '#dd8033')
+                } else if(cellData < 55){
+                    $(td).css('background-color', '#eac117')
+                } else if(cellData < 70){
+                    $(td).css('background-color', '#117722')
+                } else{
+                    $(td).css('background-color', '#44bbdd')
+                }
+            }
+        },
+        {
+            targets: 3,
+            createdCell: function (td, cellData, rowData, row, col) {
+                if(cellData > 35){
+                    $(td).css('background-color', '#dd0000')
+                } else if(cellData > 30){
+                    $(td).css('background-color', '#dd8033')
+                } else if(cellData > 25){
+                    $(td).css('background-color', '#eac117')
+                } else if (cellData < 21){
+                    $(td).css('background-color', '#117722')
+                }
+            }
+        },
+        {
+            targets: 5,
+            createdCell: function (td, cellData, rowData, row, col) {
+                if(cellData > 6.5){
+                    $(td).css('background-color', '#44bbdd')
+                } else if(cellData > 4.5){
+                    $(td).css('background-color', '#117722')
+                } else if(cellData > 3.8){
+                    $(td).css('background-color', '#eac117')
+                } else if (cellData < 3){
+                    $(td).css('background-color', '#dd8033')
+                } else{
+                    $(td).css('background-color', '#dd0000')
+                }
+            }
+        }];
+
+    $(document).ready(function() {
+        $('#other-scout-ratings').DataTable( {
+            data: dataSet,
+            columns: columns,
+            columnDefs: colDefs,
+            pageLength: 25,
+            order: [[4, 'desc']]
+        } );
+    } );
+</script>
