@@ -361,20 +361,25 @@ def team(team: str):
     minors_records = [record for record in minors_query]
 
     # check if there's a team
-    if len(majors_records) == 0:
-        return render_template('landing.html', error='Team not found.', phrase=random.choice(phrases))
+    if len(majors_records) == 0 and team != 'FA':
+        return render_template(
+            'landing.html',
+            error='Team not found.',
+            phrase=random.choice(phrases),
+            al_standings=al_standing_tables,
+            nl_standings=nl_standing_tables,
+        )
 
     minors_df = pd.DataFrame.from_records(minors_records).rename({'_id': 'HELPER'}, axis=1)
     prospects = clean_tables(minors_df, 'farm-system')
 
     # then pull ML roster
-    majors_df = pd.DataFrame.from_records(majors_records).rename({'_id': 'HELPER'}, axis=1)
-    roster = clean_tables(majors_df, 'ml-roster')
-
-    total_df = pd.concat([minors_df, majors_df], ignore_index=True)
-
-    # avoid generating line-ups, team header for FA
     if team != 'FA':
+        majors_df = pd.DataFrame.from_records(majors_records).rename({'_id': 'HELPER'}, axis=1)
+        roster = clean_tables(majors_df, 'ml-roster')
+
+        total_df = pd.concat([minors_df, majors_df], ignore_index=True)
+
         # pitching_table, batting_table = generate_lineup_card(subset)
         pitching_table, batting_table = '', ''
 
@@ -432,11 +437,13 @@ def team(team: str):
         header_ded = header_str_ded.format(dead_amt, dead_names)
 
     else:
+        total_df = minors_df
         pitching_table = ''
         batting_table = ''
-        header_rec = '',
-        header_fin = '',
-        header_ded = '',
+        header_rec = ''
+        header_fin = ''
+        header_ded = ''
+        roster = ''
 
     # other scouts takes
     with_bio = [record for record in db['scout_takes'].find({'TM': team})]
