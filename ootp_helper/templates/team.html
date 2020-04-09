@@ -1,6 +1,8 @@
 <!doctype html>
 <link rel= "stylesheet" type= "text/css" href= "../static/styles/style.css">
 <script src="../static/sorttable.js"></script>
+<script src="../static/utils.js"></script>
+
 <title>Team Info</title>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css"/>
 <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
@@ -61,93 +63,142 @@
 
 <hr></hr>
 
-{% if roster %}
-  {% if batting_table %}
-  <h3> ML Roster </h3>
-  <div class='row'>
+{% if batting_table and pitching_table %}
+    <h3> ML Roster </h3>
+    <div class='row'>
     <div class='col-md-auto' style="padding-right:20px; border-right: 1px solid #ccc;">
       {{batting_table|safe}}
     </div>
     <div class='col-md-auto'>
       {{pitching_table|safe}}
     </div>
-  </div>
-  <br>
-  <br>
-  {% else %}
-  {% endif %}
-  {{roster|safe }}
-{% else %}
-  <p> Error - no table </p>
+    </div>
 {% endif %}
 
-{% if prospects %}
-  <h3> Farm System </h3>
-  {{prospects|safe }}
-{% else %}
-  <p> Error - no table </p>
-{% endif %}
+<!-- tables to be filled in w/ js later -->
 <hr/>
-<table id="other-scout-ratings" class="display compact" style="width:100%"></table>
-<script>
-    let colNames = {{ other_scouts_columns|safe }};
-    let dataSet = {{ other_scouts_data|safe }};
 
-    let columns = colNames.map(function(item) {return {title: item}});
-    let colDefs = [{
-            targets: [-1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13],
+<table id="ml-roster" class="display compact" style="width:100%"></table>
+
+<hr/>
+
+<table id="farm-system" class="display compact" style="width:100%"></table>
+
+<hr/>
+
+<table id="other-scout-ratings" class="display compact" style="width:100%"></table>
+
+<script>
+    // columns that will always be stylized as ratings
+    const ratingColumns = ['POT', 'CON P', 'GAP P', 'POW P', 'EYE P', 'K P', 'STU P', 'MOV P', 'CTL P'];
+
+    // team roster
+    let majorsColNames = {{ majors_columns|safe }};
+    let majorsDataSet = {{ majors_data|safe }};
+
+    let majorsColumns = majorsColNames.map(function(item) {return {title: item}});
+
+    let majorsColDefs = [
+        {
+            targets: ratingColumns.map(function(e){return(majorsColNames.indexOf(e))}),
             createdCell: function (td, cellData, rowData, row, col) {
-                if(cellData < 25){
-                    $(td).css('background-color', '#dd0000')
-                } else if(cellData < 40){
-                    $(td).css('background-color', '#dd8033')
-                } else if(cellData < 55){
-                    $(td).css('background-color', '#eac117')
-                } else if(cellData < 70){
-                    $(td).css('background-color', '#117722')
-                } else{
-                    $(td).css('background-color', '#44bbdd')
-                }
+                $(td).css('background-color', ratingColorMap(70, 55, 40, 25, cellData, true));
+            }
+        }, {
+            targets: majorsColNames.indexOf('mwar_mean'),
+            createdCell: function (td, cellData, rowData, row, col) {
+                $(td).css('background-color', ratingColorMap(6.5, 4.5, 3.8, 3, cellData, true));
+            }
+        },
+        {
+            targets: majorsColNames.indexOf('Age'),
+            createdCell: function (td, cellData, rowData, row, col) {
+                $(td).css('background-color', ratingColorMap(0, 21, 30, 35, cellData, false));
+            }
+        },
+    ];
+
+    $(document).ready(function() {
+        $('#ml-roster').DataTable( {
+            data: majorsDataSet,
+            columns: majorsColumns,
+            columnDefs: majorsColDefs,
+            pageLength: 100,
+            order: [[majorsColNames.indexOf('old grade'), 'desc']],
+        } );
+    } );
+
+    // team prospect table
+    let prospectColNames = {{ prospects_columns|safe }};
+    let prospectDataSet = {{ prospects_data|safe }};
+
+    let prospectColumns = prospectColNames.map(function(item) {return {title: item}});
+
+    let prospectsColDefs = [
+        {
+            targets: ratingColumns.map(function(e){return(prospectColNames.indexOf(e))}),
+            createdCell: function (td, cellData, rowData, row, col) {
+                $(td).css('background-color', ratingColorMap(70, 55, 40, 25, cellData, true));
+            }
+        },
+        {
+            targets: prospectColNames.indexOf('mwar_mean'),
+            createdCell: function (td, cellData, rowData, row, col) {
+                $(td).css('background-color', ratingColorMap(6.5, 4.5, 3.8, 3, cellData, true));
+            }
+        },
+        {
+            targets: prospectColNames.indexOf('Age'),
+            createdCell: function (td, cellData, rowData, row, col) {
+                $(td).css('background-color', ratingColorMap(0, 21, 30, 35, cellData, false));
+            }
+        },
+    ];
+
+
+    $(document).ready(function() {
+        $('#farm-system').DataTable( {
+            data: prospectDataSet,
+            columns: prospectColumns,
+            columnDefs: prospectsColDefs,
+            pageLength: 25,
+            order: [[prospectColNames.indexOf('old grade'), 'desc']],
+        } );
+    } );
+
+    // other scout table
+    let otherScoutColNames = {{ other_scouts_columns|safe }};
+    let otherScoutDataSet = {{ other_scouts_data|safe }};
+    let otherScoutIndexes = {{ other_scout_indexes|safe }};
+
+    let otherScoutColumns = otherScoutColNames.map(function(item) {return {title: item}});
+    let otherScoutColDefs = [{
+            targets: otherScoutIndexes,
+            createdCell: function (td, cellData, rowData, row, col) {
+                $(td).css('background-color', ratingColorMap(70, 55, 40, 25, cellData, true));
             }
         },
         {
             targets: 3,
             createdCell: function (td, cellData, rowData, row, col) {
-                if(cellData > 35){
-                    $(td).css('background-color', '#dd0000')
-                } else if(cellData > 30){
-                    $(td).css('background-color', '#dd8033')
-                } else if(cellData > 25){
-                    $(td).css('background-color', '#eac117')
-                } else if (cellData < 21){
-                    $(td).css('background-color', '#117722')
-                }
+                $(td).css('background-color', ratingColorMap(0, 21, 30, 35, cellData, false));
             }
         },
         {
             targets: 5,
             createdCell: function (td, cellData, rowData, row, col) {
-                if(cellData > 6.5){
-                    $(td).css('background-color', '#44bbdd')
-                } else if(cellData > 4.5){
-                    $(td).css('background-color', '#117722')
-                } else if(cellData > 3.8){
-                    $(td).css('background-color', '#eac117')
-                } else if (cellData < 3){
-                    $(td).css('background-color', '#dd8033')
-                } else{
-                    $(td).css('background-color', '#dd0000')
-                }
+                $(td).css('background-color', ratingColorMap(6.5, 4.5, 3.8, 3, cellData, true));
             }
         }];
 
+    // https://datatables.net/extensions/searchpanes/examples/advanced/columnFilter.html
     $(document).ready(function() {
         $('#other-scout-ratings').DataTable( {
-            data: dataSet,
-            columns: columns,
-            columnDefs: colDefs,
+            data: otherScoutDataSet,
+            columns: otherScoutColumns,
+            columnDefs: otherScoutColDefs,
             pageLength: 25,
-            order: [[4, 'desc']]
+            order: [[4, 'desc']],
         } );
     } );
 </script>

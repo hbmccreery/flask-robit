@@ -1,6 +1,7 @@
 from ootp_helper.constants import CLEAN_TABLES_COLS, POT_COLS, BUTTON_STRING, TABLE_PROPERTIES
 from ootp_helper.color_maps import rating_colors, highlight_woba, highlight_fip, highlight_mwar, highlight_og_change, \
     highlight_mwar_change
+from typing import List, Tuple
 
 
 def clean_tables(subset, table_name, include_team=False, team_pot=''):
@@ -56,3 +57,26 @@ def clean_tables(subset, table_name, include_team=False, team_pot=''):
     ).hide_index().render()
 
     return table
+
+
+def create_table_json(subset, include_team=False, team_pot='') -> Tuple[List, List[List]]:
+    insert_cols = CLEAN_TABLES_COLS[:1] + ['TM', 'rank'] + CLEAN_TABLES_COLS[1:] if include_team else CLEAN_TABLES_COLS
+
+    subset = subset[insert_cols]
+
+    round_three = ['woba', 'woba_mean']
+    round_two = ['og-1', 'mwar-1', 'fip', 'fip_mean']
+    round_one = ['old grade', 'mwar_mean']
+    round_zero = POT_COLS + ['POT']
+
+    subset[round_three] = subset[round_three].round(3)
+    subset[round_two] = subset[round_two].round(2)
+    subset[round_one] = subset[round_one].round(1)
+    subset[round_zero] = subset[round_zero].applymap(int)
+
+    subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
+
+    return_cols = ['' if col == 'HELPER' else col for col in insert_cols]
+    return_data = subset.values.tolist()
+
+    return return_cols, return_data

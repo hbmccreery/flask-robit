@@ -14,7 +14,7 @@ from ootp_helper.player.run_calculators import *
 from ootp_helper.player.table_generators import *
 from ootp_helper.position.position_utils import create_position_tables
 from ootp_helper.color_maps import *
-from ootp_helper.utils import clean_tables
+from ootp_helper.utils import clean_tables, create_table_json
 
 (al_standing_tables, nl_standing_tables, finances) = create_standings()
 (batting_benchmarks, pitching_benchmarks) = create_benchmarks()
@@ -345,17 +345,7 @@ def rising_prospect_page(position=None):
 def team(team: str):
     # get players w/ OG > 5
     majors_query = db[months[0]].find({'TM': team, 'Lev': 'MLB'}).sort('old grade', -1)
-    minors_query = db[months[0]].find({
-        # on team, not MLB
-        'TM': team,
-        'Lev': {'$ne': 'MLB'},
-        # either OG > 8, POT > 35, or OG > 5 and age <= 24
-        '$or': [
-            {'old grade': {'$gte': 8}},
-            {'POT': {'$gte': 35}},
-            {'$and': [{'old grade': {'$gte': 5}}, {'Age': {'$lte': 24}}]},
-        ],
-    }).sort('old grade', -1)
+    minors_query = db[months[0]].find({'TM': team, 'Lev': {'$ne': 'MLB'}}).sort('old grade', -1)
 
     majors_records = [record for record in majors_query]
     minors_records = [record for record in minors_query]
@@ -371,17 +361,16 @@ def team(team: str):
         )
 
     minors_df = pd.DataFrame.from_records(minors_records).rename({'_id': 'HELPER'}, axis=1)
-    prospects = clean_tables(minors_df, 'farm-system')
+    majors_df = pd.DataFrame.from_records(majors_records).rename({'_id': 'HELPER'}, axis=1)
+
+    prosects_columns, prospects_data = create_table_json(minors_df)
+    majors_columns, majors_data = create_table_json(majors_df)
 
     # then pull ML roster
     if team != 'FA':
-        majors_df = pd.DataFrame.from_records(majors_records).rename({'_id': 'HELPER'}, axis=1)
-        roster = clean_tables(majors_df, 'ml-roster')
-
         total_df = pd.concat([minors_df, majors_df], ignore_index=True)
 
-        # pitching_table, batting_table = generate_lineup_card(subset)
-        pitching_table, batting_table = '', ''
+        pitching_table, batting_table = generate_lineup_card(majors_df)
 
         team_finances = finances.loc[finances['Name'] == team].iloc[0]
         header_str_rec = '{0} - {1} ({2} Pythagorean, {3} Robit)' 
@@ -443,39 +432,28 @@ def team(team: str):
         header_rec = ''
         header_fin = ''
         header_ded = ''
-        roster = ''
 
     # other scouts takes
     with_bio = [record for record in db['scout_takes'].find({'TM': team})]
     with_bio = pd.DataFrame.from_records(with_bio)
     with_bio.rename({'_id': 'HELPER'}, axis=1, inplace=True)
 
-    with_bio = pd.merge(total_df[['HELPER', 'POS', 'Lev', 'Age', 'old grade', 'mwar_mean']], with_bio, on='HELPER')
+    scout_bio_cols = ['HELPER', 'POS', 'Lev', 'Age', 'old grade', 'mwar_mean']
+
+    with_bio = pd.merge(total_df[scout_bio_cols], with_bio, on='HELPER')
     with_bio['HELPER'] = with_bio['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
 
     with_bio['old grade'] = with_bio['old grade'].round(1)
     with_bio['mwar_mean'] = with_bio['mwar_mean'].round(1)
     with_bio.drop('TM', axis=1, inplace=True)
 
-    # with_bio = with_bio.sort_values('POT', ascending=False).drop(
-    #     ['TM'], axis=1
-    # ).style.set_properties(
-    #     **{
-    #         'text-align': 'left',
-    #         'padding': '15px',
-    #         'margin-bottom': '40px',
-    #         'font-size': '1.4em',
-    #     }
-    # ).set_table_styles(
-    #     [{'selector': 'th', 'props': [('font-size', '1.2em')]}]
-    # ).set_table_attributes(
-    #     "class='sortable'"
-    # ).hide_index().render()
-
     other_scouts_columns = list(with_bio.columns)
     other_scouts_columns = ['' if col == 'HELPER' else col for col in other_scouts_columns]
     other_scouts_data = with_bio.values.tolist()
-        
+
+    non_team_cols = scout_bio_cols + ['', 'Name']
+    other_scouts_indexes = [idx for idx, val in enumerate(other_scouts_columns) if val not in non_team_cols]
+
     return render_template(
         'team.html',
         name=full_team_name[team],
@@ -483,12 +461,15 @@ def team(team: str):
         header_fin=header_fin,
         header_ded=header_ded,
         team_logo='../static/team_logos/{}.png'.format(team),
-        prospects=prospects,
-        roster=roster,
+        prospects_columns=prosects_columns,
+        prospects_data=prospects_data,
+        majors_columns=majors_columns,
+        majors_data=majors_data,
         batting_table=batting_table,
         pitching_table=pitching_table,
         other_scouts_columns=other_scouts_columns,
         other_scouts_data=other_scouts_data,
+        other_scout_indexes=other_scouts_indexes,
         phrase=random.choice(phrases),
     )
 
