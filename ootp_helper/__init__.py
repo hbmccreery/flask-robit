@@ -360,8 +360,8 @@ def team(team: str):
             nl_standings=nl_standing_tables,
         )
 
-    minors_df = pd.DataFrame.from_records(minors_records).rename({'_id': 'HELPER'}, axis=1)
-    majors_df = pd.DataFrame.from_records(majors_records).rename({'_id': 'HELPER'}, axis=1)
+    minors_df = pd.DataFrame.from_records(minors_records).rename({'_id': 'HELPER'}, axis=1).fillna(0)
+    majors_df = pd.DataFrame.from_records(majors_records).rename({'_id': 'HELPER'}, axis=1).fillna(0)
 
     prosects_columns, prospects_data = create_table_json(minors_df)
     majors_columns, majors_data = create_table_json(majors_df)
