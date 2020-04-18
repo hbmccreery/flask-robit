@@ -1,61 +1,54 @@
 <!doctype html>
+
 <head>
     <link rel= "stylesheet" type= "text/css" href= "../static/styles/style.css">
     <title>Robit - Home Page</title>
     <script src="../static/sorttable.js"></script>
+
 </head>
+<body>
+    <h1> <a href = "../"><img src="../static/bender.png" width="5%"> OOTP Robit</a></h1>
+    <h2> {% if phrase %} {{phrase}} {% else %} This would say something witty, but Hugh is dumb {% endif %}</h2>
 
-<h1> <a href = "../"><img src="../static/bender.png", width="5%"> OOTP Robit</a></h1>
-<h2> {% if phrase %} {{phrase}} {% else %} This would say something witty, but Hugh is dumb {% endif %}</h2>
+    {% if error %}
+    <h2 style="color:red"> {{error}} </h2>
+    {% else %}
+    {% endif %}
 
-{% if error %}
-<h2 style="color:red"> {{error}} </h2>
-{% else %}
-{% endif %}
-
-<div class = 'row'>
-    <div class = 'column'>
-        <h3> Team search </h3>
-        <form method="POST">
-            <input name="team">
-            <input type="submit">
-        </form>
+    <div class = 'row'>
+        <div class = 'column'>
+            <h3> Team search </h3>
+            <form method="POST">
+                <input name="team">
+                <input type="submit">
+            </form>
+        </div>
+        <div class = 'column'  valign="center">
+            <input type = 'button' value = 'Player Comparison' onclick='window.location.href="/compare"'>
+        </div>
+        <div class = 'column'>
+            <h3> Player search </h3>
+            <form method="POST">
+                <input name="player">
+                <input type="submit">
+            </form>
+        </div>
     </div>
-    <div class = 'column'  valign="center">
-        <input type = 'button' value = 'Player Comparison' onclick='window.location.href="/compare"'>
+    </br> </br>
+    <div class='row'>
+        <div class='column'>
+        {% for div_name, standings in al_standings.items() %}
+        <h1> {{div_name}} </h1>
+        {{standings|safe}}
+        <br>
+        {% endfor %}
+        </div>
+        <div class='column'>
+        {% for div_name, standings in nl_standings.items() %}
+        <h1> {{div_name}} </h1>
+        {{standings|safe}}
+        <br>
+        {% endfor %}
+        </div>
     </div>
-    <div class = 'column'>
-        <h3> Player search </h3>
-        <form method="POST">
-            <input name="player">
-            <input type="submit">
-        </form>
-    </div>
-</div>
-</br> </br>
-<div class='row'>
-    <div class='column'>
-    {% for div_name, standings in al_standings.items() %}
-    <h1> {{div_name}} </h1>
-    {{standings|safe}}
-    <br>
-    {% endfor %}
-    </div>
-    <div class='column'>
-    {% for div_name, standings in nl_standings.items() %}
-    <h1> {{div_name}} </h1>
-    {{standings|safe}}
-    <br>
-    {% endfor %}
-    </div>
-</div>
-<!-- <div class='row'>
-  <div class='col-md-auto' style="padding-right:20px; border-right: 1px solid #ccc;">
-    <h1> Rising Players </h1>
-    {{rising_table|safe}}
-  </div>
-  <div class='col-md-auto'>
-    <h1> Falling Players </h1>
-    {{falling_table|safe}}
-  </div>
-</div> -->
+</body>
