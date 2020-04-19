@@ -63,7 +63,7 @@ def generate_lineup_card(team_df: pd.DataFrame) -> Tuple[str, str]:
     
     # get all possible lineups sets of player/woba/WAR (w/ duplicates)
     # boy that is badly formatted
-    potential_pairs = team_df.apply(
+    potential_pairs = team_df.sort_values('woba', ascending=False).head(15).apply(
                         lambda x: [
                             (
                                 y,
