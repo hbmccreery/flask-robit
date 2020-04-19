@@ -4,7 +4,7 @@ import pandas as pd
 
 from ootp_helper.player.run_calculators import runs_to_ratings, ratings_to_runs
 from ootp_helper.color_maps import defense_stat_colors
-from ootp_helper.constants import DEF_RAT_COLUMNS, TABLE_PROPERTIES
+from ootp_helper.constants import DEF_RAT_COLUMNS, TABLE_PROPERTIES, IND_PIT_COLUMNS, IND_PIT_POT_COLUMNS
 
 
 def generate_defense_table(stats: pd.DataFrame, ratings: pd.DataFrame) -> Tuple[str, str, str]:
@@ -85,3 +85,20 @@ def generate_other_table(ratings: pd.DataFrame) -> str:
     rendered_ratings = reshaped_rats.set_index('Type').T.reset_index().to_json(orient='records')
 
     return rendered_ratings
+
+
+def generate_ind_pitch_table(ratings: pd.DataFrame) -> str:
+    ratings = ratings.iloc[0]
+    pitch_cur = ratings[IND_PIT_COLUMNS]
+    pitch_pots = ratings[IND_PIT_POT_COLUMNS]
+
+    valid_ind = list(pitch_pots.values > 20)
+
+    pitch_cur = pitch_cur[valid_ind]
+    pitch_pots = pitch_pots[valid_ind]
+    pitch_pots.index = pitch_cur.index
+
+    pitch_df = pd.concat([pitch_cur, pitch_pots], axis=1).reset_index()
+    pitch_df.columns = ['index', 'current', 'potential']
+    pitch_df[['current', 'potential']] = pitch_df[['current', 'potential']].applymap(int)
+    return pitch_df.to_json(orient='records')

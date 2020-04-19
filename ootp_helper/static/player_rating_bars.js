@@ -1,4 +1,4 @@
-function createSVG(pitching_json, batting_json, other_json, def_json){
+function createSVG(pitching_json, batting_json, other_json, def_json, ind_pit_json){
     function fillColor(rat){
         if (rat > 70){
             return '#44bbdd';
@@ -73,7 +73,7 @@ function createSVG(pitching_json, batting_json, other_json, def_json){
         var cur_bar_values = svg.selectAll('text.currents')
                                 .data(ratings)
                                 .enter()
-                                .append('text')
+                                .append('text');
 
         cur_bar_values.text(function(d){return d['current'];})
                       .attr('x', left_margin + 250)
@@ -83,7 +83,7 @@ function createSVG(pitching_json, batting_json, other_json, def_json){
         var pot_bar_values = svg.selectAll('text.potentials')
                                 .data(ratings)
                                 .enter()
-                                .append('text')
+                                .append('text');
 
         pot_bar_values.text(function(d){return '/' + d['potential'];})
                       .attr('x', left_margin + 270)
@@ -91,7 +91,7 @@ function createSVG(pitching_json, batting_json, other_json, def_json){
                       .attr('fill', function(d){return fillColor(d['potential'])}); 
     }
 
-    var selected_div = d3.select('#ratings')
+    var selected_div = d3.select('#ratings');
 
     var bat_svg = selected_div.append('div')
                     .attr('class', 'col-md-auto')
@@ -107,7 +107,7 @@ function createSVG(pitching_json, batting_json, other_json, def_json){
                     .attr('width', width)
                     .attr('height', height);
 
-    createRatingBars(pit_svg, pitching_json)
+    createRatingBars(pit_svg, pitching_json);
 
     var other_svg = selected_div.append('div')
                     .attr('class', 'col-md-auto')
@@ -115,9 +115,9 @@ function createSVG(pitching_json, batting_json, other_json, def_json){
                     .attr('width', width)
                     .attr('height', height);
 
-    createRatingBars(other_svg, other_json)
+    createRatingBars(other_svg, other_json);
 
-    def_height = 275
+    def_height = 275;
 
     var def_svg = selected_div.append('div')
                   .attr('class', 'col-md-auto')
@@ -125,5 +125,13 @@ function createSVG(pitching_json, batting_json, other_json, def_json){
                   .attr('width', width)
                   .attr('height', def_height);
 
-    createRatingBars(def_svg, def_json)
+    createRatingBars(def_svg, def_json);
+
+    var ind_pit_svg = selected_div.append('div')
+              .attr('class', 'col-md-auto')
+              .append('svg')
+              .attr('width', width)
+              .attr('height', height);
+
+    createRatingBars(ind_pit_svg, ind_pit_json);
 }

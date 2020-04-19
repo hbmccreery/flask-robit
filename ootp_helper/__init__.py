@@ -558,6 +558,7 @@ def player(helper):
     bat_ratings = current[BAT_RAT_COLUMNS]
     pit_ratings = current[PIT_RAT_COLUMNS]
     other_ratings = current[OTHER_RAT_COLUMNS]
+    pitch_ratings = current[IND_PIT_COLUMNS + IND_PIT_POT_COLUMNS]
 
     # then build table
     name = generate_player_name(player_records[0])
@@ -567,6 +568,10 @@ def player(helper):
     bat_rats = generate_rating_table(bat_ratings, True)
     pit_rats = generate_rating_table(pit_ratings, False)
     other_rats = generate_other_table(other_ratings)
+    ind_pit_rats = generate_ind_pitch_table(pitch_ratings)
+
+    
+
 
     # and a little text snippet of recent ratings changes
     changes = []
@@ -636,6 +641,7 @@ def player(helper):
         bat_rats=bat_rats,
         pit_rats=pit_rats,
         other_rats=other_rats,
+        ind_pit_rats=ind_pit_rats,
         subset=subset,
         bat_levs=bat_levels,
         pit_levs=pit_levels,

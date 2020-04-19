@@ -45,6 +45,9 @@ BAT_RAT_COLUMNS = ['CON', 'GAP', 'POW', 'EYE', 'K', 'CON P', 'GAP P', 'POW P', '
 
 PIT_RAT_COLUMNS = ['STU', 'MOV', 'CTL', 'STU P', 'MOV P', 'CTL P']
 
+IND_PIT_COLUMNS = ['FB', 'CH', 'CB', 'SL', 'SI', 'SP', 'CT', 'FO', 'CC', 'SC', 'KC', 'KN']
+IND_PIT_POT_COLUMNS = [col + 'P' for col in IND_PIT_COLUMNS]
+
 OTHER_RAT_COLUMNS = ['SPE', 'STE', 'RUN', 'STM']
 
 ALL_STAT_COLS = ['TM', 'Name'] + PLAYER_SUBSET[1:] + DEF_STAT_COLUMNS + ['og-2', 'POT-1', 'POT-2']

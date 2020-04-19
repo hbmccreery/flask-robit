@@ -131,9 +131,10 @@
   var batting_json = JSON.parse({{bat_rats|tojson}});
   var other_json = JSON.parse({{other_rats|tojson}});
   var def_json = JSON.parse({{def_rats|tojson}});
+  var ind_pit_json = JSON.parse({{ind_pit_rats|tojson}});
 
   // then build our svg
-  createSVG(pitching_json, batting_json, other_json, def_json)
+  createSVG(pitching_json, batting_json, other_json, def_json, ind_pit_json)
 </script>
 
 <script type="text/javascript">
