@@ -65,7 +65,7 @@
       {% endif %}
     </div>
 
-    <hr></hr>
+    <hr/>
 
     <div class="row">
       <div class="column">
@@ -78,7 +78,7 @@
         {% endif %}
       </div>
     </div>
-    <hr></hr>
+    <hr/>
       <div class="row">
       <div class="column">
         <div>
@@ -96,7 +96,14 @@
         {% endif %}
       </div>
     </div>
-    <hr></hr>
+    <hr/>
+
+    <h3> Splits </h3>
+        <div class='row' id="splits-ratings">
+          <!-- d3 code will be inserted here -->
+        </div>
+    <hr/>
+
     <h3> Development </h3>
     <div class="row">
       <div class="column" id="development_og">
@@ -127,14 +134,16 @@
 
 <script type="text/javascript">
   // do jinja things
-  var pitching_json = JSON.parse({{pit_rats|tojson}});
-  var batting_json = JSON.parse({{bat_rats|tojson}});
-  var other_json = JSON.parse({{other_rats|tojson}});
-  var def_json = JSON.parse({{def_rats|tojson}});
-  var ind_pit_json = JSON.parse({{ind_pit_rats|tojson}});
+  let pitching_json = JSON.parse({{pit_rats|tojson}});
+  let batting_json = JSON.parse({{bat_rats|tojson}});
+  let other_json = JSON.parse({{other_rats|tojson}});
+  let def_json = JSON.parse({{def_rats|tojson}});
+  let ind_pit_json = JSON.parse({{ind_pit_rats|tojson}});
+  let bat_splits = JSON.parse({{bat_splits|tojson}});
+  let pit_splits = JSON.parse({{pit_splits|tojson}});
 
   // then build our svg
-  createSVG(pitching_json, batting_json, other_json, def_json, ind_pit_json)
+  createSVG(pitching_json, batting_json, other_json, def_json, ind_pit_json, bat_splits, pit_splits)
 </script>
 
 <script type="text/javascript">

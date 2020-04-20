@@ -1,6 +1,7 @@
-from typing import Tuple
+from typing import Tuple, List
 
 import pandas as pd
+import json
 
 from ootp_helper.player.run_calculators import runs_to_ratings, ratings_to_runs
 from ootp_helper.color_maps import defense_stat_colors
@@ -101,4 +102,20 @@ def generate_ind_pitch_table(ratings: pd.DataFrame) -> str:
     pitch_df = pd.concat([pitch_cur, pitch_pots], axis=1).reset_index()
     pitch_df.columns = ['index', 'current', 'potential']
     pitch_df[['current', 'potential']] = pitch_df[['current', 'potential']].applymap(int)
+
     return pitch_df.to_json(orient='records')
+
+
+def generate_splits_table(ratings: dict, column_names: List) -> str:
+    return json.dumps({
+        'r': [
+            {'index': key, 'current': int(ratings[key])}
+            for key
+            in [col + ' vR' for col in column_names if ' ' not in col]
+        ],
+        'l': [
+            {'index': key, 'current': int(ratings[key])}
+            for key
+            in [col + ' vL' for col in column_names if ' ' not in col]
+        ],
+    })

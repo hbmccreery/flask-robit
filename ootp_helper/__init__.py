@@ -551,14 +551,15 @@ def player(helper):
     ).hide_index().render()
 
     # get the numbers to build tables with
-    current = pd.DataFrame.from_records([db[months[0]].find_one({'_id': helper})])
+    current_record = db[months[0]].find_one({'_id': helper})
+    current_df = pd.DataFrame.from_records([current_record])
 
-    def_stats = current[DEF_STAT_COLUMNS]
-    def_ratings = current[DEF_RAT_COLUMNS]
-    bat_ratings = current[BAT_RAT_COLUMNS]
-    pit_ratings = current[PIT_RAT_COLUMNS]
-    other_ratings = current[OTHER_RAT_COLUMNS]
-    pitch_ratings = current[IND_PIT_COLUMNS + IND_PIT_POT_COLUMNS]
+    def_stats = current_df[DEF_STAT_COLUMNS]
+    def_ratings = current_df[DEF_RAT_COLUMNS]
+    bat_ratings = current_df[BAT_RAT_COLUMNS]
+    pit_ratings = current_df[PIT_RAT_COLUMNS]
+    other_ratings = current_df[OTHER_RAT_COLUMNS]
+    pitch_ratings = current_df[IND_PIT_COLUMNS + IND_PIT_POT_COLUMNS]
 
     # then build table
     name = generate_player_name(player_records[0])
@@ -569,9 +570,8 @@ def player(helper):
     pit_rats = generate_rating_table(pit_ratings, False)
     other_rats = generate_other_table(other_ratings)
     ind_pit_rats = generate_ind_pitch_table(pitch_ratings)
-
-    
-
+    bat_splits = generate_splits_table(current_record, BAT_RAT_COLUMNS)
+    pit_splits = generate_splits_table(current_record, PIT_RAT_COLUMNS)
 
     # and a little text snippet of recent ratings changes
     changes = []
@@ -642,6 +642,8 @@ def player(helper):
         pit_rats=pit_rats,
         other_rats=other_rats,
         ind_pit_rats=ind_pit_rats,
+        bat_splits=bat_splits,
+        pit_splits=pit_splits,
         subset=subset,
         bat_levs=bat_levels,
         pit_levs=pit_levels,
