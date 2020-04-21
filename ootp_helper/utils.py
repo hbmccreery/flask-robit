@@ -91,11 +91,15 @@ def get_front_page_data(db, filter: dict) -> List[list]:
     # reformat
     helper_idx = FRONT_PAGE_COLS.index('_id')
     round_indexes = [FRONT_PAGE_COLS.index(item) for item in ['old grade', 'og-1', 'mwar_mean', 'mwar-1']]
+    round_two_indexes = [FRONT_PAGE_COLS.index(item) for item in ['fip_mean']]
+    round_three_indexes = [FRONT_PAGE_COLS.index(item) for item in ['woba_mean']]
 
     records = [
         [
             BUTTON_STRING.format(item.replace("'", "%27")) if idx == helper_idx
             else round(item, 1) if idx in round_indexes
+            else round(item, 2) if idx in round_two_indexes
+            else round(item, 3) if idx in round_three_indexes
             else item
             for idx, item
             in enumerate(record)
