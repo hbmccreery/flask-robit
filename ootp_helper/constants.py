@@ -27,7 +27,7 @@ old_to_new = {
 # subsets of atts used to display tables
 PLAYER_DISP = ['HELPER', 'TM', 'POS', 'Name', 'Lev', 'Age']
 
-FRONT_PAGE_COLS = PLAYER_DISP[1:] + ['old grade', 'og-1', 'POT', 'mwar_mean', 'mwar-1']
+FRONT_PAGE_COLS = ['_id'] + PLAYER_DISP[1:] + ['POT', 'old grade', 'og-1', 'mwar_mean', 'mwar-1']
 
 POT_COLS = ['CON P', 'GAP P', 'POW P', 'EYE P', 'K P', 'STU P', 'MOV P', 'CTL P']
 

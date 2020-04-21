@@ -1,4 +1,4 @@
-from ootp_helper.constants import CLEAN_TABLES_COLS, POT_COLS, BUTTON_STRING, TABLE_PROPERTIES
+from ootp_helper.constants import CLEAN_TABLES_COLS, POT_COLS, BUTTON_STRING, TABLE_PROPERTIES, months, FRONT_PAGE_COLS
 from ootp_helper.color_maps import rating_colors, highlight_woba, highlight_fip, highlight_mwar, highlight_og_change, \
     highlight_mwar_change
 from typing import List, Tuple
@@ -80,3 +80,28 @@ def create_table_json(subset, include_team=False, team_pot='') -> Tuple[List, Li
     return_data = subset.values.tolist()
 
     return return_cols, return_data
+
+
+def get_front_page_data(db, filter: dict) -> List[list]:
+    # add in skill floor, get data from db
+    filter['old grade'] = {'$gte': 5}
+    db_cursor = db[months[0]].find(filter)
+    records = [[record[key] for key in FRONT_PAGE_COLS] for record in db_cursor]
+
+    # reformat
+    helper_idx = FRONT_PAGE_COLS.index('_id')
+    round_indexes = [FRONT_PAGE_COLS.index(item) for item in ['old grade', 'og-1', 'mwar_mean', 'mwar-1']]
+
+    records = [
+        [
+            BUTTON_STRING.format(item.replace("'", "%27")) if idx == helper_idx
+            else round(item, 1) if idx in round_indexes
+            else item
+            for idx, item
+            in enumerate(record)
+        ]
+        for record in records
+    ]
+
+
+    return records

@@ -52,3 +52,7 @@ tr:hover            { background-color: #FFDC00;}
     }
 }
 
+/* for the datatables */
+.pull-left{
+    float: left !important;
+}

@@ -3,7 +3,9 @@
 <head>
     <link rel= "stylesheet" type= "text/css" href= "../static/styles/style.css">
     <title>Robit - Home Page</title>
-    <script src="../static/sorttable.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css"/>
+    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
 
 </head>
 <body>
@@ -37,18 +39,81 @@
     </br> </br>
     <div class='row'>
         <div class='column'>
-        {% for div_name, standings in al_standings.items() %}
-        <h1> {{div_name}} </h1>
-        {{standings|safe}}
-        <br>
-        {% endfor %}
+            <table id="all-rise" class="display nowrap" style="width:50%; float:left"></table>
         </div>
         <div class='column'>
-        {% for div_name, standings in nl_standings.items() %}
-        <h1> {{div_name}} </h1>
-        {{standings|safe}}
-        <br>
-        {% endfor %}
+            <table id="all-fall" class="display nowrap" style="width:50%; float:left"></table>
+        </div>
+    </div>
+    <hr/>
+    <hr/>
+    <div class='row'>
+        <div class='column'>
+            <table id="partial-rise" class="display nowrap" style="width:50%; float:left"></table>
+        </div>
+        <div class='column'>
+            <table id="partial-fall" class="display nowrap" style="width:50%; float:left"></table>
         </div>
     </div>
 </body>
+
+<script>
+    var colNames = {{ col_names|safe }};
+    var allRise = {{ all_rise|safe }};
+    var allFall = {{ all_fall|safe }};
+    var partialRise = {{ partial_rise|safe }};
+    var partialFall = {{ partial_fall|safe }};
+
+    var columns = colNames.map(function(item) {return {title: item}});
+
+    $(document).ready(function() {
+        $('#all-rise').DataTable( {
+            data: allRise,
+            columns: columns,
+            pageLength: 10,
+            searching: false,
+            bInfo: false,
+            dom: '<l<t><"pull-left"p>>',
+            order: [[colNames.indexOf('og-1'), 'desc']],
+        } );
+    } );
+    $('.dataTables_filter').addClass('pull-left');
+
+
+
+    $(document).ready(function() {
+        $('#all-fall').DataTable( {
+            data: allFall,
+            columns: columns,
+            pageLength: 10,
+            searching: false,
+            bInfo: false,
+            dom: '<l<t><"pull-left"p>>',
+            order: [[colNames.indexOf('og-1'), 'desc']],
+        } );
+    } );
+
+    $(document).ready(function() {
+        $('#partial-rise').DataTable( {
+            data: partialRise,
+            columns: columns,
+            pageLength: 10,
+            searching: false,
+            bInfo: false,
+            dom: '<l<t><"pull-left"p>>',
+            order: [[colNames.indexOf('og-1'), 'desc']],
+        } );
+    } );
+
+    $(document).ready(function() {
+        $('#partial-fall').DataTable( {
+            data: partialFall,
+            columns: columns,
+            pageLength: 10,
+            searching: false,
+            bInfo: false,
+            dom: '<l<t><"pull-left"p>>',
+            order: [[colNames.indexOf('og-1'), 'desc']],
+        } );
+    } );
+</script>

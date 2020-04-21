@@ -14,7 +14,7 @@ from ootp_helper.player.run_calculators import *
 from ootp_helper.player.table_generators import *
 from ootp_helper.position.position_utils import create_position_tables
 from ootp_helper.color_maps import *
-from ootp_helper.utils import clean_tables, create_table_json
+from ootp_helper.utils import clean_tables, create_table_json, get_front_page_data
 
 (al_standing_tables, nl_standing_tables, finances) = create_standings()
 (batting_benchmarks, pitching_benchmarks) = create_benchmarks()
@@ -29,6 +29,12 @@ client = MongoClient(
     'mongodb://{0}:{1}@ds253368.mlab.com:53368/flask_robit?retryWrites=false'.format(read_user, read_pass)
 )
 db = client['flask_robit']
+
+# the data for columns on the front page
+all_rise = get_front_page_data(db, {'og-1': {'$gte': 0.5}, 'POS': {'$nin': ['RP', 'CL']}})
+all_fall = get_front_page_data(db, {'og-1': {'$lte': -0.5}})
+partial_rise = get_front_page_data(db, {'og-1': {'$gte': 0.5}, 'TM': {'$in': ['COL', 'CIN', 'WAS']}})
+partial_fall = get_front_page_data(db, {'og-1': {'$lte': -0.5}, 'TM': {'$in': ['COL', 'CIN', 'WAS']}})
 
 
 def generate_lineup_card(team_df: pd.DataFrame) -> Tuple[str, str]:
@@ -129,8 +135,11 @@ def generate_lineup_card(team_df: pd.DataFrame) -> Tuple[str, str]:
 def generate_error_message(message: str):
     return render_template(
         'landing.html',
-        al_standings=al_standing_tables,
-        nl_standings=nl_standing_tables,
+        col_names=json.dumps([''] + FRONT_PAGE_COLS[1:]),
+        all_rise=json.dumps(all_rise),
+        all_fall=json.dumps(all_fall),
+        partial_rise=json.dumps(partial_rise),
+        partial_fall=json.dumps(partial_fall),
         error=message,
         phrase=random.choice(phrases),
     )
@@ -144,8 +153,11 @@ app.secret_key = 'supes_secrit_key'
 def landing_page():
     return render_template(
         'landing.html',
-        al_standings=al_standing_tables,
-        nl_standings=nl_standing_tables,
+        col_names=json.dumps([''] + FRONT_PAGE_COLS[1:]),
+        all_rise=json.dumps(all_rise),
+        all_fall=json.dumps(all_fall),
+        partial_rise=json.dumps(partial_rise),
+        partial_fall=json.dumps(partial_fall),
         phrase=random.choice(phrases),
     )
 
@@ -352,13 +364,7 @@ def team(team: str):
 
     # check if there's a team
     if len(majors_records) == 0 and team != 'FA':
-        return render_template(
-            'landing.html',
-            error='Team not found.',
-            phrase=random.choice(phrases),
-            al_standings=al_standing_tables,
-            nl_standings=nl_standing_tables,
-        )
+        generate_error_message('Team not found.')
 
     minors_df = pd.DataFrame.from_records(minors_records).rename({'_id': 'HELPER'}, axis=1).fillna(0)
     majors_df = pd.DataFrame.from_records(majors_records).rename({'_id': 'HELPER'}, axis=1).fillna(0)
