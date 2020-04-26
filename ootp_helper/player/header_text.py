@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
+
 from ootp_helper.color_maps import *
+from ootp_helper.player.run_calculators import calculate_batting_runs, calculate_pitching_runs
 
 
 def generate_player_name(player_record: dict) -> str:
@@ -83,7 +85,13 @@ def generate_player_stat_string(player: pd.Series) -> str:
     )
 
 
-def generate_ratings_header(df: pd.DataFrame) -> str:
+def generate_ratings_header(df: pd.DataFrame, bat_splits: dict, pit_splits: dict) -> str:
+
+    woba_rhp, runs_rhp = calculate_batting_runs(bat_splits['r'])
+    woba_lhp, runs_lhp = calculate_batting_runs(bat_splits['l'])
+    fip_rhb, runs_rhb = calculate_pitching_runs(pit_splits['r'])
+    fip_lhb, runs_lhb = calculate_pitching_runs(pit_splits['l'])
+
     df = df.iloc[0:4]
 
     current_month = df.iloc[0]
@@ -102,6 +110,8 @@ def generate_ratings_header(df: pd.DataFrame) -> str:
     if current_month['bwar_mean'] > current_month['pwar_mean']:
         adv_stat_type = 'wOBA'
         adv_stat_now = round(current_month['woba'], 3)
+        adv_stat_vl = round(woba_lhp, 3)
+        adv_stat_vr = round(woba_rhp, 3)
         adv_stat = round(current_month['woba_mean'], 3)
         adv_stat_trend = round(sum(df['pwoba-1']), 3)
         adv_stat_positive = sum(df['pwoba-1'] > 0)
@@ -109,16 +119,18 @@ def generate_ratings_header(df: pd.DataFrame) -> str:
 
     else:
         adv_stat_type = 'FIP'
-        adv_stat_now = round(current_month['fip'], 3)
-        adv_stat = round(current_month['fip_mean'], 3)
-        adv_stat_trend = round(sum(df['pfip-1']), 3)
+        adv_stat_now = round(current_month['fip'], 2)
+        adv_stat_vl = round(fip_lhb, 2)
+        adv_stat_vr = round(fip_rhb, 2)
+        adv_stat = round(current_month['fip_mean'], 2)
+        adv_stat_trend = round(sum(df['pfip-1']), 2)
         adv_stat_positive = sum(df['pfip-1'] > 0)
         adv_stat_negative = sum(df['pfip-1'] < 0)
 
     ratings_header = (
         '<h2> <mark style="{0};"> Grade {1} ({2}: +{3}, -{4}) |'
         ' WAR {14}/{5} ({6}: +{7}, -{8}) | '
-        '{9} {15}/{10} ({11}: +{12} -{13}) </mark> </h2>'
+        '{9} {15}/{10} ({11}: +{12} -{13}) {16} vL / {17} vR </mark> </h2>'
     ).format(
         mark,
         current_month['old grade'],
@@ -136,6 +148,8 @@ def generate_ratings_header(df: pd.DataFrame) -> str:
         adv_stat_negative,
         current_war,
         adv_stat_now,
+        adv_stat_vl,
+        adv_stat_vr,
     )
 
     return ratings_header

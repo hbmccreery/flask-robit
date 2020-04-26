@@ -15,6 +15,7 @@ from ootp_helper.player.table_generators import *
 from ootp_helper.position.position_utils import create_position_tables
 from ootp_helper.color_maps import *
 from ootp_helper.utils import clean_tables, create_table_json, get_front_page_data
+from ootp_helper.team.team_utils import add_splits_data
 
 (al_standing_tables, nl_standing_tables, finances) = create_standings()
 (batting_benchmarks, pitching_benchmarks) = create_benchmarks()
@@ -362,6 +363,9 @@ def team(team: str):
     majors_records = [record for record in majors_query]
     minors_records = [record for record in minors_query]
 
+    majors_records = add_splits_data(majors_records)
+    minors_records = add_splits_data(minors_records)
+
     # check if there's a team
     if len(majors_records) == 0 and team != 'FA':
         generate_error_message('Team not found.')
@@ -568,16 +572,17 @@ def player(helper):
     pitch_ratings = current_df[IND_PIT_COLUMNS + IND_PIT_POT_COLUMNS]
 
     # then build table
+    bat_splits = generate_splits_table(current_record, BAT_RAT_COLUMNS)
+    pit_splits = generate_splits_table(current_record, PIT_RAT_COLUMNS)
+
     name = generate_player_name(player_records[0])
-    rating_header = generate_ratings_header(subset)
+    rating_header = generate_ratings_header(subset, bat_splits, pit_splits)
     bio = generate_player_header(player_records[0])
     def_rats, def_stats, best_pos = generate_defense_table(def_stats, def_ratings)
     bat_rats = generate_rating_table(bat_ratings, True)
     pit_rats = generate_rating_table(pit_ratings, False)
     other_rats = generate_other_table(other_ratings)
     ind_pit_rats = generate_ind_pitch_table(pitch_ratings)
-    bat_splits = generate_splits_table(current_record, BAT_RAT_COLUMNS)
-    pit_splits = generate_splits_table(current_record, PIT_RAT_COLUMNS)
 
     # and a little text snippet of recent ratings changes
     changes = []
@@ -648,8 +653,8 @@ def player(helper):
         pit_rats=pit_rats,
         other_rats=other_rats,
         ind_pit_rats=ind_pit_rats,
-        bat_splits=bat_splits,
-        pit_splits=pit_splits,
+        bat_splits=json.dumps(bat_splits),
+        pit_splits=json.dumps(pit_splits),
         subset=subset,
         bat_levs=bat_levels,
         pit_levs=pit_levels,

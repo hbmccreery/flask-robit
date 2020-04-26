@@ -90,7 +90,7 @@
 
 <script>
     // columns that will always be stylized as ratings
-    const ratingColumns = ['POT', 'CON P', 'GAP P', 'POW P', 'EYE P', 'K P', 'STU P', 'MOV P', 'CTL P'];
+    const ratingColumns = ['POT'];  //, 'CON P', 'GAP P', 'POW P', 'EYE P', 'K P', 'STU P', 'MOV P', 'CTL P'];
 
     // team roster
     let majorsColNames = {{ majors_columns|safe }};
@@ -104,7 +104,8 @@
             createdCell: function (td, cellData, rowData, row, col) {
                 $(td).css('background-color', ratingColorMap(70, 55, 40, 25, cellData, true));
             }
-        }, {
+        },
+        {
             targets: majorsColNames.indexOf('mwar_mean'),
             createdCell: function (td, cellData, rowData, row, col) {
                 $(td).css('background-color', ratingColorMap(6.5, 4.5, 3.8, 3, cellData, true));

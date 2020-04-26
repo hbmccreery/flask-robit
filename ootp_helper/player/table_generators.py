@@ -106,8 +106,8 @@ def generate_ind_pitch_table(ratings: pd.DataFrame) -> str:
     return pitch_df.to_json(orient='records')
 
 
-def generate_splits_table(ratings: dict, column_names: List) -> str:
-    return json.dumps({
+def generate_splits_table(ratings: dict, column_names: List) -> dict:
+    return {
         'r': [
             {'index': key, 'current': int(ratings[key])}
             for key
@@ -118,4 +118,4 @@ def generate_splits_table(ratings: dict, column_names: List) -> str:
             for key
             in [col + ' vL' for col in column_names if ' ' not in col]
         ],
-    })
+    }

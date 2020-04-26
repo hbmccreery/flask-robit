@@ -64,10 +64,10 @@ def create_table_json(subset, include_team=False, team_pot='') -> Tuple[List, Li
 
     subset = subset[insert_cols]
 
-    round_three = ['woba', 'woba_mean']
-    round_two = ['og-1', 'mwar-1', 'fip', 'fip_mean']
+    round_three = ['woba', 'woba_rhp', 'woba_lhp', 'woba_mean']
+    round_two = ['og-1', 'mwar-1', 'fip', 'fip_rhb', 'fip_lhb', 'fip_mean']
     round_one = ['old grade', 'mwar_mean']
-    round_zero = POT_COLS + ['POT', 'ip']
+    round_zero = ['POT', 'ip']
 
     subset[round_three] = subset[round_three].round(3)
     subset[round_two] = subset[round_two].round(2)
