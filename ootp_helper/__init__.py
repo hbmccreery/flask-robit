@@ -1,21 +1,20 @@
 from flask import Flask, render_template, request, redirect, session
 import numpy as np
 import random
-from itertools import product, groupby
 from pymongo import MongoClient
 
-import matplotlib
-matplotlib.use('Agg')
+# import matplotlib
+# matplotlib.use('Agg')
 
 from ootp_helper.constants import *
-from ootp_helper.data_reading import create_player_data, create_standings, create_benchmarks, read_dist_data
+from ootp_helper.data_reading import create_player_data, create_benchmarks, read_dist_data, create_standings
 from ootp_helper.player.header_text import generate_player_name, generate_player_header, generate_player_stat_string, generate_ratings_header
 from ootp_helper.player.run_calculators import *
 from ootp_helper.player.table_generators import *
 from ootp_helper.position.position_utils import create_position_tables
 from ootp_helper.color_maps import *
 from ootp_helper.utils import clean_tables, create_table_json, get_front_page_data
-from ootp_helper.team.team_utils import add_splits_data
+from ootp_helper.team.team_utils import add_splits_data, generate_lineup_card
 
 (al_standing_tables, nl_standing_tables, finances) = create_standings()
 (batting_benchmarks, pitching_benchmarks) = create_benchmarks()
@@ -36,101 +35,6 @@ all_rise = get_front_page_data(db, {'og-1': {'$gte': 0.5}, 'POS': {'$nin': ['RP'
 all_fall = get_front_page_data(db, {'og-1': {'$lte': -0.5}})
 partial_rise = get_front_page_data(db, {'og-1': {'$gte': 0.5}, 'TM': {'$in': ['COL', 'CIN', 'WAS']}})
 partial_fall = get_front_page_data(db, {'og-1': {'$lte': -0.5}, 'TM': {'$in': ['COL', 'CIN', 'WAS']}})
-
-
-def generate_lineup_card(team_df: pd.DataFrame) -> Tuple[str, str]:
-    lineup_pit_cols = ['HELPER', 'Name', 'ip', 'fip', 'pwar']
-
-    sp = team_df.nlargest(5, 'pwar')[lineup_pit_cols]
-    rp = team_df.loc[~team_df['HELPER'].isin(sp['HELPER'])].nsmallest(8, 'fip', keep='last')[lineup_pit_cols]
-
-    sp['POS'] = 'SP'
-    rp['POS'] = 'RP'
-
-    pitching = sp.append(rp, ignore_index=True)
-    pitching.drop('HELPER', axis=1, inplace=True)
-
-    team_df['optim_pos'] = '-'
-    team_df['pot_pos'] = ''
-    team_df['pot_pos'] = team_df['pot_pos'].apply(list)
-
-    # mark off which positions they currently play
-    for position in ['C', 'SS', 'CF', '2B', '3B', 'RF', 'LF', '1B']:
-        if position not in ['C', '1B', 'LF']:
-            cutoff = 45
-        elif position in ['C', 'LF']:
-            cutoff = 40
-        else:
-            cutoff = 30
-
-        player_df = team_df.loc[(team_df[position] > cutoff) & (team_df['optim_pos'] == '-')]
-
-        for player_name in player_df['HELPER']:
-            team_df.loc[team_df['HELPER'] == player_name, 'pot_pos'].iloc[0].extend([position])
-    
-    # get all possible lineups sets of player/woba/WAR (w/ duplicates)
-    # boy that is badly formatted
-    potential_pairs = team_df.sort_values('woba', ascending=False).head(15).apply(
-                        lambda x: [
-                            (
-                                y,
-                                x['HELPER'],
-                                x['Name'],
-                                x['woba'],
-                                x['bwar']
-                            )
-                            for y
-                            in x['pot_pos']
-                        ], axis=1
-                      ).tolist()
-
-    potential_pairs = list(filter(lambda x: x != [], potential_pairs))
-    
-    ungrouped_items = [item for sublist in potential_pairs for item in sublist]
-    ungrouped_items.sort(key=lambda x: x[0])
-
-    groups = []
-    unique_keys = []
-
-    for key, group in groupby(ungrouped_items, lambda x: x[0]):
-        groups.append(list(group))      # Store group iterator as a list
-        unique_keys.append(key)
-        
-    potential_lineups = [x for x in product(*groups)]
-    
-    lineup_woba = []
-
-    for lineup in potential_lineups:
-        if len(set([x[1] for x in lineup])) != 8:
-            lineup_woba.append(0)
-        else:
-            lineup_woba.append(sum([x[3] for x in lineup]))
-
-    # noinspection PyTypeChecker
-    optimal_lineup = pd.DataFrame(list(potential_lineups[np.argmax(lineup_woba)]))
-    optimal_lineup.columns = ['lineup_pos', 'HELPER', 'Name', 'woba', 'bwar']
-    optimal_lineup = optimal_lineup.sort_values('woba', ascending=False)
-    
-    bench = team_df.loc[~team_df['HELPER'].isin(optimal_lineup['HELPER'])].nlargest(5, 'woba', keep='last')
-    bench = bench[['HELPER', 'Name', 'bwar', 'woba']]
-    bench['lineup_pos'] = 'PH'
-    
-    batting = optimal_lineup.append(bench, ignore_index=True)
-
-    optimal_lineup.drop('HELPER', axis=1, inplace=True)
-
-    pitching = pitching[['POS', 'Name', 'fip', 'ip']].round(2)
-    batting = batting[['lineup_pos', 'Name', 'woba', 'bwar']].round(3)
-    
-    pitching_html = pitching.style.set_properties(
-        **(dict(TABLE_PROPERTIES, **{'font-size': '1.5em'}))
-    ).hide_index().render()
-    
-    batting_html = batting.style.set_properties(
-        **(dict(TABLE_PROPERTIES, **{'font-size': '1.5em'}))
-    ).hide_index().render()
-
-    return pitching_html, batting_html
 
 
 def generate_error_message(message: str):
@@ -367,17 +271,16 @@ def team(team: str):
     minors_records = add_splits_data(minors_records)
 
     # check if there's a team
-    if len(majors_records) == 0 and team != 'FA':
+    if len(majors_records) == 0 and team != 'DRAFT':
         generate_error_message('Team not found.')
 
     minors_df = pd.DataFrame.from_records(minors_records).rename({'_id': 'HELPER'}, axis=1).fillna(0)
     majors_df = pd.DataFrame.from_records(majors_records).rename({'_id': 'HELPER'}, axis=1).fillna(0)
 
     prosects_columns, prospects_data = create_table_json(minors_df)
-    majors_columns, majors_data = create_table_json(majors_df)
 
-    # then pull ML roster
-    if team != 'FA':
+    if team != 'DRAFT':
+        majors_columns, majors_data = create_table_json(majors_df)
         total_df = pd.concat([minors_df, majors_df], ignore_index=True)
 
         pitching_table, batting_table = generate_lineup_card(majors_df)
@@ -437,6 +340,8 @@ def team(team: str):
 
     else:
         total_df = minors_df
+        majors_columns = []
+        majors_data = []
         pitching_table = ''
         batting_table = ''
         header_rec = ''
