@@ -16,6 +16,51 @@ def generate_player_name(player_record: dict) -> str:
     )
 
 
+def generate_war_probabilities_styled(war_dists: dict) -> str:
+    results = {}
+    thresholds = [0, 3, 4, 5, 7]
+
+    for dist in ['bat_dist', 'pit_dist']:
+        results[dist] = []
+        for threshold in thresholds:
+            results[dist] = results[dist] + [sum([item['p'] for item in war_dists[dist] if item['WAR'] > threshold])]
+
+    bat_str = None
+    pit_str = None
+    color_list = ['#dd0000', '#dd8033', '#eac117', '#117722', '#44bbdd']
+
+    if results['bat_dist'][0] == 0 and results['pit_dist'][0] == 0:
+        return '<h2> <font color="{}"> Abandon hope all ye who enter </font> </h2>'.format(color_list[0])
+
+    for war, prob, color in zip(thresholds, results['bat_dist'], color_list):
+        if prob == 0:
+            continue
+
+        formatted_str = '<font color="{0}"> {1:.1f}% {2} WAR </font>'.format(color, prob * 100, war)
+
+        if bat_str:
+            bat_str = bat_str + ' | ' + formatted_str
+        else:
+            bat_str = formatted_str
+
+    for war, prob, color in zip(thresholds, results['pit_dist'], color_list):
+        if prob == 0:
+            continue
+
+        formatted_str = '<font color="{0}"> {1:.1f}% {2} WAR </font>'.format(color, prob * 100, war)
+
+        if pit_str:
+            pit_str = pit_str + ' | ' + formatted_str
+        else:
+            pit_str = formatted_str
+
+    if bat_str and pit_str:
+        return '<h2> Batter: {} <br/> Pitcher: {} </h2>'.format(bat_str, pit_str)
+
+    return '<h2> {} </h2>'.format(bat_str if bat_str else pit_str)
+
+
+
 def generate_player_header(player: dict) -> str:
     line_zero = '<b> HT:</b> {0} | <b> WT:</b> {1} | <b> B/T</b> {2}/{3}'.format(
         player['HT'],
@@ -85,7 +130,7 @@ def generate_player_stat_string(player: pd.Series) -> str:
     )
 
 
-def generate_ratings_header(df: pd.DataFrame, bat_splits: dict, pit_splits: dict) -> str:
+def generate_ratings_header(df: pd.DataFrame, bat_splits: dict, pit_splits: dict, war_dists: dict) -> str:
 
     woba_rhp, runs_rhp = calculate_batting_runs(bat_splits['r'])
     woba_lhp, runs_lhp = calculate_batting_runs(bat_splits['l'])
@@ -152,4 +197,4 @@ def generate_ratings_header(df: pd.DataFrame, bat_splits: dict, pit_splits: dict
         adv_stat_vr,
     )
 
-    return ratings_header
+    return ratings_header + ' <br/> ' + generate_war_probabilities_styled(war_dists)

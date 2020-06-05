@@ -260,26 +260,27 @@ def rising_prospect_page(position=None):
 
 @app.route('/team/<team>')
 def team(team: str):
-    # get players w/ OG > 5
-    majors_query = db[months[0]].find({'TM': team, 'Lev': 'MLB'}).sort('old grade', -1)
+
     minors_query = db[months[0]].find({'TM': team, 'Lev': {'$ne': 'MLB'}}).sort('old grade', -1)
-
-    majors_records = [record for record in majors_query]
     minors_records = [record for record in minors_query]
-
-    majors_records = add_splits_data(majors_records)
     minors_records = add_splits_data(minors_records)
 
-    # check if there's a team
-    if len(majors_records) == 0 and team != 'DRAFT':
-        generate_error_message('Team not found.')
+    if team != 'FA':
+        majors_query = db[months[0]].find({'TM': team, 'Lev': 'MLB'}).sort('old grade', -1)
+        majors_records = [record for record in majors_query]
+        majors_records = add_splits_data(majors_records)
+
+        # check if there's a team
+        if len(majors_records) == 0 and team != 'DRAFT':
+            generate_error_message('Team not found.')
+
+
+        majors_df = pd.DataFrame.from_records(majors_records).rename({'_id': 'HELPER'}, axis=1).fillna(0)
 
     minors_df = pd.DataFrame.from_records(minors_records).rename({'_id': 'HELPER'}, axis=1).fillna(0)
-    majors_df = pd.DataFrame.from_records(majors_records).rename({'_id': 'HELPER'}, axis=1).fillna(0)
-
     prosects_columns, prospects_data = create_table_json(minors_df)
 
-    if team != 'DRAFT':
+    if team not in ['DRAFT', 'FA']:
         majors_columns, majors_data = create_table_json(majors_df)
         total_df = pd.concat([minors_df, majors_df], ignore_index=True)
 
@@ -362,6 +363,10 @@ def team(team: str):
     with_bio['mwar_mean'] = with_bio['mwar_mean'].round(1)
     with_bio.drop('TM', axis=1, inplace=True)
 
+    # reorder columns
+    scout_takes_cols = list(set(with_bio.columns) - set(OTHER_SCOUT_COLUMN_ORDER))
+    with_bio = with_bio[OTHER_SCOUT_COLUMN_ORDER + scout_takes_cols]
+
     other_scouts_columns = list(with_bio.columns)
     other_scouts_columns = ['' if col == 'HELPER' else col for col in other_scouts_columns]
     other_scouts_data = with_bio.values.tolist()
@@ -437,8 +442,10 @@ def pos(pos: str):
 def player(helper):
     player_records = [db[month].find_one({'_id': helper}) for month in months]
     player_records = [record for record in player_records if record is not None]
-    subset = pd.DataFrame.from_records(player_records)[PLAYER_SUBSET]
 
+    war_dist_data = db['dist_data'].find_one({'_id': helper})
+
+    subset = pd.DataFrame.from_records(player_records)[PLAYER_SUBSET]
     subset.insert(loc=5, column='og80', value=(subset['mwar_mean'] * 0.8 + subset['POT'] / 50))
 
     round_three = ['woba', 'woba_mean']
@@ -481,7 +488,7 @@ def player(helper):
     pit_splits = generate_splits_table(current_record, PIT_RAT_COLUMNS)
 
     name = generate_player_name(player_records[0])
-    rating_header = generate_ratings_header(subset, bat_splits, pit_splits)
+    rating_header = generate_ratings_header(subset, bat_splits, pit_splits, war_dist_data)
     bio = generate_player_header(player_records[0])
     def_rats, def_stats, best_pos = generate_defense_table(def_stats, def_ratings)
     bat_rats = generate_rating_table(bat_ratings, True)
@@ -566,6 +573,7 @@ def player(helper):
         other_team_table=other_team_table,
         months={'months': reversed_months},
         total_change_str=total_change_str,
+        war_dists=war_dist_data,
         phrase=random.choice(phrases),
     )
 

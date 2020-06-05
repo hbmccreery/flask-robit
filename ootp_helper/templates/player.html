@@ -46,17 +46,18 @@
     <h2> Under construction! </h2>
     {% endif %}
  -->
-    <div class='row' id="ratings">
-      <!-- d3 code will be inserted here -->
-    </div>
 
     <div class="row" id="dist">
-        <div class="column" id="pitching_dist">
+        <div class="column" id="war_dist">
             <!-- d3 code will be inserted here -->
         </div>
-        <div class="column" id="hitting_dist">
+        <div class="column" id="secondary_dist">
             <!-- d3 code will be inserted here -->
         </div>
+    </div>
+
+    <div class='row' id="ratings">
+      <!-- d3 code will be inserted here -->
     </div>
 
     <div class='row' id='other_teams'>
@@ -147,6 +148,126 @@
 </script>
 
 <script type="text/javascript">
+    function fillColor(WAR){
+        if (WAR >= 7){
+            return '#44bbdd';
+        }
+        else if (WAR >= 5){
+            return '#117722';
+        }
+        else if (WAR >= 3){
+            return '#eac117';
+        }
+        else if (WAR >= 0){
+            return '#dd8033';
+        }
+        else {
+            return '#dd0000';
+        }
+    }
+
+    const svgHeight = 200;
+    const svgWidth = 600;
+    const svgMargin = 20;
+
+    let warDists = {{ war_dists|tojson }};
+
+    const minPitchWar = d3.min(warDists['pit_dist'], function (d) {return d.WAR});
+    const maxPitchWar = d3.max(warDists['pit_dist'], function (d) {return d.WAR});
+
+    const barWidthPitch = svgWidth / (2 * (maxPitchWar - minPitchWar + 0.5));
+
+    const minBatWar = d3.min(warDists['bat_dist'], function (d) {return d.WAR});
+    const maxBatWar = d3.max(warDists['bat_dist'], function (d) {return d.WAR});
+
+    const barWidthBat = svgWidth / (2 * (maxBatWar - minBatWar + 0.5));
+
+    // build pitching WAR dists
+    if(maxPitchWar > 0){
+        const header = d3.select("#war_dist").append("h3").text("As Pitcher");
+
+        const svg = d3.select("#war_dist")
+            .append('svg')
+            .attr('width', svgWidth)
+            .attr('height', svgHeight);
+
+        const xScale = d3.scaleLinear()
+            .domain([minPitchWar, maxPitchWar])
+            .range([svgMargin, svgWidth - svgMargin]);
+
+        const yScale = d3.scaleLinear()
+            .domain([
+                d3.max(warDists['pit_dist'], function (d) {return d.p}),
+                0,
+            ])
+            .range([svgMargin, svgHeight - svgMargin]);
+
+        const xAxis = d3.axisBottom().scale(xScale);
+
+        svg.append('g')
+            .attr('class', 'axis')
+            .attr('transform', 'translate(0,' + (svgHeight - svgMargin) + ")")
+            .attr('font-weight', 'bold')
+            .call(xAxis);
+
+        svg.selectAll('rect.backgrounds')
+            .data(warDists['pit_dist'])
+            .enter()
+            .append('rect')
+            .attr('stroke-width', 2)
+            .attr('stroke', 'black')
+            .attr('height', function(d){return svgHeight - svgMargin - yScale(d.p)})
+            .attr('width', barWidthPitch - 2)
+            .attr('x', function(d){return xScale(d.WAR)})
+            .attr('y',  function(d){return yScale(d.p)})
+            .attr('fill', function(d){return fillColor(d.WAR)});
+    }
+
+    if(maxBatWar > 0){
+        const divId = maxPitchWar > 0 ? "#secondary_dist" : "#war_dist";
+
+        const header = d3.select(divId).append("h3").text("As Batter");
+        const svg = d3.select(divId)
+            .append('svg')
+            .attr('width', svgWidth)
+            .attr('height', svgHeight);
+
+        svg.text('As Batter').attr('x', 0).attr('y', 0);
+
+        const xScale = d3.scaleLinear()
+            .domain([minBatWar, maxBatWar])
+            .range([svgMargin, svgWidth - svgMargin]);
+
+        const yScale = d3.scaleLinear()
+            .domain([
+                d3.max(warDists['bat_dist'], function (d) {return d.p}),
+                0,
+            ])
+            .range([svgMargin, svgHeight - svgMargin]);
+
+        const xAxis = d3.axisBottom().scale(xScale);
+
+        svg.append('g')
+            .attr('class', 'axis')
+            .attr('transform', 'translate(0,' + (svgHeight - svgMargin) + ")")
+            .attr('font-weight', 'bold')
+            .call(xAxis);
+
+        svg.selectAll('rect.backgrounds')
+            .data(warDists['bat_dist'])
+            .enter()
+            .append('rect')
+            .attr('stroke-width', 2)
+            .attr('stroke', 'black')
+            .attr('height', function(d){return svgHeight - svgMargin - yScale(d.p)})
+            .attr('width', barWidthBat - 2)
+            .attr('x', function(d){return xScale(d.WAR)})
+            .attr('y',  function(d){return yScale(d.p)})
+            .attr('fill', function(d){return fillColor(d.WAR)});
+    }
+</script>
+
+<script type="text/javascript">
   var subset_json = JSON.parse({{subset|tojson}});
   var month_labs = {{months|tojson}}['months'];
   var bat_benchmarks = JSON.parse({{bat_levs|tojson}});
@@ -206,30 +327,6 @@
       .attr('width', svg_width)
       .attr('height', svg_height)
       .attr('fill', color_back);
-  // throw a legend on
-  // svg.append('circle')
-  //    .attr('cx', x_padding + svg_width / 10)
-  //    .attr('cy', y_padding / 2.5)
-  //    .attr('r', y_padding / 6)
-  //    .attr('fill', color_main)
-
-  // svg.append('text')
-  //    .attr('x', x_padding + (svg_width / 10) + 20)
-  //    .attr('y', y_padding / 2.5)
-  //    .attr("alignment-baseline","middle")
-  //    .text('Old Grade');
-
-  // svg.append('circle')
-  //    .attr('cx', x_padding + svg_width / 4)
-  //    .attr('cy', y_padding / 2.5)
-  //    .attr('r', y_padding / 6)
-  //    .attr('fill', color_sec)
-
-  // svg.append('text')
-  //    .attr('x', x_padding + (svg_width / 4) + 20)
-  //    .attr('y', y_padding / 2.5)
-  //    .attr("alignment-baseline","middle")
-  //    .text('woba_mean');
 
   // x-axis
   var x_scale = d3.scaleLinear()
@@ -494,58 +591,5 @@
           .text(bat_benchmarks[i]['lev']);
     }
   }
-
-  {#// read in data#}
-  {#var pit_dist = {{pitching_dist|tojson}}['dist'];#}
-  {#var hit_dist = {{hitting_dist|tojson}}['dist'];#}
-  {#var defense_runs = {{def_runs|safe}};#}
-  {##}
-  {#// create svg to append d3 obj to#}
-  {#var dist_svg = d3.select('#pitching_dist')#}
-  {#                 .append('svg')#}
-  {#                 .attr('width', svg_width)#}
-  {#                 .attr('height', svg_height);#}
-  {##}
-  {#dist_svg.append('rect')#}
-  {#    .attr('width', svg_width)#}
-  {#    .attr('height', svg_height)#}
-  {#    .attr('fill', color_back);#}
-  {##}
-  {#// add axis for pitching data#}
-  {#// x-axis#}
-  {#var pit_x_scale = d3.scaleLinear()#}
-  {#                    .domain([d3.min(pit_dist), d3.max(pit_dist)])#}
-  {#                    .range([pct_pad * svg_width, (1 - pct_pad) * svg_width]);#}
-  {##}
-  {#dist_svg.append("g")#}
-  {#    .attr("transform", "translate(0," + svg_height + ")")#}
-  {#    .call(d3.axisBottom(pit_x_scale));#}
-  {##}
-  {#// add the y Axis#}
-  {#var pit_y = d3.scaleLinear()#}
-  {#          .domain([0, 0.01])#}
-  {#          .range([pct_pad*, 0]);#}
-  {##}
-  {#dist_svg.append("g")#}
-  {#    .call(d3.axisLeft(pit_y));#}
-  {##}
-  {#// Compute kernel density estimation#}
-  {#var kde = kernelDensityEstimator(kernelEpanechnikov(7), x.ticks(40));#}
-  {#var density =  kde( data.map(function(d){  return d.price; }) );#}
-  {##}
-  {#// Function to compute density#}
-  {#function kernelDensityEstimator(kernel, X) {#}
-  {#  return function(V) {#}
-  {#    return X.map(function(x) {#}
-  {#      return [x, d3.mean(V, function(v) { return kernel(x - v); })];#}
-  {#    });#}
-  {#  };#}
-  {#}#}
-  {#function kernelEpanechnikov(k) {#}
-  {#  return function(v) {#}
-  {#    return Math.abs(v /= k) <= 1 ? 0.75 * (1 - v * v) / k : 0;#}
-  {#  };#}
-  {#}#}
-
 
 </script>

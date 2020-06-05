@@ -68,6 +68,17 @@ BIO_COLS = ['HELPER', 'POS', 'Name', 'TM', 'Lev', 'Age', 'INJ', 'Type',
 
 POS = ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'SP', 'RP', 'OF', 'IF']
 
+OTHER_SCOUT_COLUMN_ORDER = [
+    'HELPER',
+    'POS',
+    'Name',
+    'Lev',
+    'Age',
+    'old grade',
+    'mwar_mean',
+    'POT',
+]
+
 SCRATCH_LEVELS = {'C': -5,
                   '1B': -12.5,
                   '2B': 2.5,
@@ -105,7 +116,7 @@ phrases = ['Now "upgraded" to OOTP19!',
            'Probably better than whatever the actual Rockies currently use',
            'Also known as "The Bigger Red Machine" or "Get a life dude"']
 
-months = ['jun29', 'apr29', 'mar29', 'feb29', 'jan29', 'dec28', 'oct28', 'aug28', 'jun28', 'apr28', 'mar28', 'feb28', 'jan28']
+months = ['aug29', 'jun29', 'apr29', 'mar29', 'feb29', 'jan29', 'dec28', 'oct28', 'aug28', 'jun28', 'apr28', 'mar28']
 currMonth = months[0]
 reversed_months = [i for i in reversed(months)]
 

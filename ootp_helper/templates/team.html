@@ -3,6 +3,28 @@
 <script src="../static/sorttable.js"></script>
 <script src="../static/utils.js"></script>
 
+
+<style>
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  padding: 12px 16px;
+  z-index: 1;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+</style>
+
 <title>Team Info</title>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css"/>
 <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
@@ -64,7 +86,6 @@
 <hr></hr>
 
 {% if batting_table and pitching_table %}
-    <h3> ML Roster </h3>
     <div class='row'>
     <div class='col-md-auto' style="padding-right:20px; border-right: 1px solid #ccc;">
       {{batting_table|safe}}
@@ -78,15 +99,18 @@
 <!-- tables to be filled in w/ js later -->
 <hr/>
 
-<table id="ml-roster" class="display compact" style="width:100%"></table>
+<h2 style="margin-bottom: 20px"> Major League Roster </h2>
+<table id="ml-roster" class="display" style="width:100%"></table>
 
 <hr/>
 
-<table id="farm-system" class="display compact" style="width:100%"></table>
+<h2 style="margin-bottom: 20px"> Farm System</h2>
+<table id="farm-system" class="display" style="width:100%"></table>
 
 <hr/>
 
-<table id="other-scout-ratings" class="display compact" style="width:100%"></table>
+<h2 style="margin-bottom: 20px"> Other Scout Ratings </h2>
+    <table id="other-scout-ratings" class="display" style="width:100%"></table>
 
 <script>
     // columns that will always be stylized as ratings
@@ -120,14 +144,29 @@
     ];
 
     $(document).ready(function() {
-        $('#ml-roster').DataTable( {
+        const majorsTable = $('#ml-roster').DataTable( {
             data: majorsDataSet,
             columns: majorsColumns,
             columnDefs: majorsColDefs,
-            pageLength: 100,
+            pageLength: 10,
+            dom: '<l<t>p>',
             order: [[majorsColNames.indexOf('old grade'), 'desc']],
         } );
-    } );
+
+        // Setup - add a text input to each footer cell
+        $('#ml-roster thead tr').clone(true).appendTo('#ml-roster thead');
+        $('#ml-roster thead tr:eq(1) th').each(function (i) {
+            var title = $(this).text();
+            $(this).html('<input type="text" placeholder="" />');
+
+            $('input', this).on('keyup change', function () {
+                if (majorsTable.column(i).search() !== this.value) {
+                    majorsTable.column(i).search(this.value).draw();
+                }
+            });
+        });
+    });
+
 
     // team prospect table
     let prospectColNames = {{ prospects_columns|safe }};
@@ -156,15 +195,27 @@
         },
     ];
 
-
     $(document).ready(function() {
-        $('#farm-system').DataTable( {
+        let minorsTable = $('#farm-system').DataTable( {
             data: prospectDataSet,
             columns: prospectColumns,
             columnDefs: prospectsColDefs,
-            pageLength: 25,
+            pageLength: 10,
+            dom: '<l<t>p>',
             order: [[prospectColNames.indexOf('old grade'), 'desc']],
         } );
+
+        $('#farm-system thead tr').clone(true).appendTo('#farm-system thead');
+        $('#farm-system thead tr:eq(1) th').each(function (i) {
+            let minorsTitle = $(this).text();
+            $(this).html('<input type="text" placeholder="" />');
+
+            $('input', this).on('keyup change', function () {
+                if (minorsTable.column(i).search() !== this.value) {
+                    minorsTable.column(i).search(this.value).draw();
+                }
+            });
+        });
     } );
 
     // other scout table
@@ -180,26 +231,76 @@
             }
         },
         {
-            targets: 3,
+            targets: otherScoutColNames.indexOf('Age'),
             createdCell: function (td, cellData, rowData, row, col) {
                 $(td).css('background-color', ratingColorMap(0, 21, 30, 35, cellData, false));
             }
         },
         {
-            targets: 5,
+            targets: otherScoutColNames.indexOf('mwar_mean'),
             createdCell: function (td, cellData, rowData, row, col) {
                 $(td).css('background-color', ratingColorMap(6.5, 4.5, 3.8, 3, cellData, true));
             }
         }];
 
-    // https://datatables.net/extensions/searchpanes/examples/advanced/columnFilter.html
     $(document).ready(function() {
-        $('#other-scout-ratings').DataTable( {
+        let scoutRatings = $('#other-scout-ratings').DataTable( {
             data: otherScoutDataSet,
             columns: otherScoutColumns,
             columnDefs: otherScoutColDefs,
-            pageLength: 25,
-            order: [[4, 'desc']],
+            pageLength: 10,
+            dom: '<l<t>p>',
+            order: [[otherScoutColNames.indexOf('old grade'), 'desc']],
         } );
+
+        let filterOption = 'EQ';
+
+        let drawHeader = () => {
+            $('#other-scout-ratings thead tr').clone(true).appendTo('#other-scout-ratings thead');
+            $('#other-scout-ratings thead tr:eq(1) th').each(function (i) {
+                if (i === 0) {
+                    //$(this).html('' +
+                    //    '<div class="dropdown">\n' +
+                    //    '  <button class="dropbtn">Filter Options</button>\n' +
+                    //    '  <div class="dropdown-content">\n' +
+                    //    '    <li id="other-dropdown-eq"> = </li>\n' +
+                    //    '    <li id="other-dropdown-gte"> > </li>\n' +
+                    //    '    <li id="other-dropdown-lte"> < </li>\n' +
+                    //    '  </div>\n' +
+                    //    '</div>'
+                    //);
+
+                    return;
+                }
+
+                let otherScoutTitle = $(this).text();
+                $(this).html('<input type="text" />');
+
+                $('input', this).on('keyup change', function () {
+                    const searchValue = this.value;
+
+                    if (filterOption === 'EQ') {
+                        if (scoutRatings.column(i).search() !== this.value) {
+                            scoutRatings.column(i).search(this.value).draw();
+                        }
+                    }
+
+                    if (filterOption === 'GTE') {
+                        scoutRatings.column(i).filter(function (column, idx) {
+                            return parseFloat(column) >= parseFloat(searchValue)
+                        }).draw();
+                    }
+
+                    if (filterOption === 'LTE') {
+                        if (scoutRatings.column(i).search() <= this.value) {
+                            scoutRatings.column(i).search(this.value).draw();
+                        }
+                    }
+                });
+            });
+        };
+
+        drawHeader();
+
     } );
 </script>
