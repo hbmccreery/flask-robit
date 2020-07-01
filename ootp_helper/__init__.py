@@ -274,7 +274,6 @@ def team(team: str):
         if len(majors_records) == 0 and team != 'DRAFT':
             generate_error_message('Team not found.')
 
-
         majors_df = pd.DataFrame.from_records(majors_records).rename({'_id': 'HELPER'}, axis=1).fillna(0)
 
     minors_df = pd.DataFrame.from_records(minors_records).rename({'_id': 'HELPER'}, axis=1).fillna(0)
