@@ -116,7 +116,7 @@ phrases = ['Now "upgraded" to OOTP19!',
            'Probably better than whatever the actual Rockies currently use',
            'Also known as "The Bigger Red Machine" or "Get a life dude"']
 
-months = ['dec29', 'nov29', 'oct29', 'aug29', 'jun29', 'apr29', 'mar29', 'feb29', 'jan29', 'dec28', 'oct28', 'aug28']
+months = ['jan30', 'dec29', 'nov29', 'oct29', 'aug29', 'jun29', 'apr29', 'mar29', 'feb29', 'jan29', 'dec28', 'oct28', 'aug28']
 currMonth = months[0]
 reversed_months = [i for i in reversed(months)]
 
