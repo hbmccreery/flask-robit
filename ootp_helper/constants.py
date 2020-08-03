@@ -96,29 +96,31 @@ TABLE_PROPERTIES = {'border': 'none',
 
 DRAFT_YEARS = ['2027', '2026', '2025', '2024', '2023', '2022']
 
-phrases = ['Now "upgraded" to OOTP19!',
-           'In the wise words of Homer Simpson: TRAMAMPOLINE! TRAMBOPOLINE!',
-           "Helping provide conditions you just can't work in for two years",
-           'Bite my shiny metal ass',
-           'Because pushing spreadsheets is fun now, I guess',
-           'Sex Cauldron?  I thought they closed that place down',
-           'Inflammable means flammable? what a country',
-           "I'm sorry, I thought he was a party robit",
-           'Does anyone else find it creepy Zoidberg is harmonizing with himself?',
-           "Hooray I'm useful",
-           'Now Zoidberg is the popular one!',
-           'Owner Goal: TCR 15 prospects into aces',
-           '0 out of 1 dads agree, this is a good use of time',
-           'Now the leading OBL programming time sink',
-           'Fan interest is for cowards',
-           'Needless code rewrites will continue until morale improves',
-           'Do nothing and hope it works - Red Sox brand in real life and in game',
-           'Probably better than whatever the actual Rockies currently use',
-           'Also known as "The Bigger Red Machine" or "Get a life dude"']
+phrases = [
+    'Now "upgraded" to OOTP20!',
+    'In the wise words of Homer Simpson: TRAMAMPOLINE! TRAMBOPOLINE!',
+    "Helping provide conditions you just can't work in",
+    'Bite my shiny metal ass',
+    'Because pushing spreadsheets is fun now, I guess',
+    'Sex Cauldron?  I thought they closed that place down',
+    'Inflammable means flammable? what a country',
+    "I'm sorry, I thought he was a party robit",
+    'Does anyone else find it creepy Zoidberg is harmonizing with himself?',
+    "Hooray I'm useful",
+    'Owner Goal: TCR 15 prospects into aces',
+    '0 out of 1 dads agree, this is a good use of time',
+    'Now the leading OBL programming time sink',
+    'Fan interest is for cowards',
+    'Also known as "The Bigger Red Machine" or "Get a life dude"',
+    'Now boasting a longer pandemic-free streak than most other MLB universes',
+    'Hopefully this doesn\'t trigger an FBI investivagion',
+    'This product proven to make you fun at parties',
+    'Do you want to know the terrifying truth, or do you want to see the Reds sock a few dingers?'
+]
 
-months = ['jan30', 'dec29', 'nov29', 'oct29', 'aug29', 'jun29', 'apr29', 'mar29', 'feb29', 'jan29', 'dec28', 'oct28', 'aug28']
+months = ['mar30', 'jan30', 'dec29', 'nov29', 'oct29', 'aug29', 'jun29', 'apr29', 'mar29', 'feb29', 'jan29', 'dec28', 'oct28', 'aug28']
 currMonth = months[0]
-reversed_months = [i for i in reversed(months)]
+reversed_months = [i for i in reversed(months)] 
 
 full_team_name = {
   'CIN': 'Cincinnati Reds', 
