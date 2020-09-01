@@ -1,7 +1,13 @@
-from ootp_helper.constants import CLEAN_TABLES_COLS, POT_COLS, BUTTON_STRING, TABLE_PROPERTIES, months, FRONT_PAGE_COLS
-from ootp_helper.color_maps import rating_colors, highlight_woba, highlight_fip, highlight_mwar, highlight_og_change, \
-    highlight_mwar_change
+import pymongo
+import json
+import random
 from typing import List, Tuple
+from flask import render_template
+
+from ootp_helper.constants import CLEAN_TABLES_COLS, POT_COLS, BUTTON_STRING, TABLE_PROPERTIES, months, FRONT_PAGE_COLS, \
+    DB_CONNECTION_STRING, DB_NAME_STRING, PHRASES
+from ootp_helper.color_maps import background_rating_colors, highlight_woba, highlight_fip, highlight_mwar, highlight_og_change, \
+    highlight_mwar_change
 
 
 def clean_tables(subset, table_name, include_team=False, team_pot=''):
@@ -31,7 +37,7 @@ def clean_tables(subset, table_name, include_team=False, team_pot=''):
     subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
 
     table = subset.style.applymap(
-        rating_colors,
+        background_rating_colors,
         subset=POT_COLS + ['POT', team_pot]
     ).applymap(
         highlight_mwar_change,
@@ -82,10 +88,10 @@ def create_table_json(subset, include_team=False, team_pot='') -> Tuple[List, Li
     return return_cols, return_data
 
 
-def get_front_page_data(db, filter: dict) -> List[list]:
+def get_front_page_data(db, data_filter: dict) -> List[list]:
     # add in skill floor, get data from db
-    filter['old grade'] = {'$gte': 5}
-    db_cursor = db[months[0]].find(filter)
+    data_filter['old grade'] = {'$gte': 5}
+    db_cursor = db[months[0]].find(data_filter)
     records = [[record[key] for key in FRONT_PAGE_COLS] for record in db_cursor]
 
     # reformat
@@ -107,5 +113,28 @@ def get_front_page_data(db, filter: dict) -> List[list]:
         for record in records
     ]
 
-
     return records
+
+
+def init_db() -> pymongo.mongo_client:
+    client = pymongo.MongoClient(DB_CONNECTION_STRING)
+    return client[DB_NAME_STRING]
+
+
+def generate_error_message(
+        message: str,
+        all_rise: List[dict],
+        all_fall: List[dict],
+        team_rise: List[dict],
+        team_fall: List[dict]
+):
+    return render_template(
+        'landing.html',
+        col_names=json.dumps([''] + FRONT_PAGE_COLS[1:]),
+        all_rise=json.dumps(all_rise),
+        all_fall=json.dumps(all_fall),
+        partial_rise=json.dumps(team_rise),
+        partial_fall=json.dumps(team_fall),
+        error=message,
+        phrase=random.choice(PHRASES),
+    )

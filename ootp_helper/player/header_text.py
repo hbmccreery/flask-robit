@@ -5,9 +5,9 @@ from ootp_helper.color_maps import *
 from ootp_helper.player.run_calculators import calculate_batting_runs, calculate_pitching_runs
 
 
-def generate_player_name(player_record: dict) -> str:
+def generate_player_name(player_record: dict, best_pos: str) -> str:
     return '{0} {1} (<a href="../team/{2}">{2}</a> {3}) {4} {5}'.format(
-        player_record['POS'],
+        best_pos,
         player_record['Name'],
         player_record['TM'],
         player_record['Lev'],

@@ -41,18 +41,21 @@ def defense_stat_colors(rat: int) -> str:
 
 def rating_colors(rat: int) -> str:
     if type(rat) is not int and type(rat) is not float:
-        return 'background-color: #FFFFFF'
+        return '#FFFFFF'
     if rat > 70:
-        return 'background-color: #44bbdd'
+        return '#44bbdd'
     if rat > 55:
-        return 'background-color: #117722'
+        return '#117722'
     if rat > 40:
-        return 'background-color: #eac117'
+        return '#eac117'
     if rat > 25:
-        return 'background-color: #dd8033'
+        return '#dd8033'
     else:
-        return 'background-color: #dd0000'
+        return '#dd0000'
 
+
+def background_rating_colors(rat: int) -> str:
+    return 'background-color: {}'.format(rating_colors(rat))
 
 def highlight_mwar(mwar: float) -> str:
     if type(mwar) is not int and type(mwar) is not float:

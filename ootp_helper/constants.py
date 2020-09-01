@@ -96,7 +96,7 @@ TABLE_PROPERTIES = {'border': 'none',
 
 DRAFT_YEARS = ['2027', '2026', '2025', '2024', '2023', '2022']
 
-phrases = [
+PHRASES = [
     'Now "upgraded" to OOTP20!',
     'In the wise words of Homer Simpson: TRAMAMPOLINE! TRAMBOPOLINE!',
     "Helping provide conditions you just can't work in",
@@ -118,7 +118,7 @@ phrases = [
     'Do you want to know the terrifying truth, or do you want to see the Reds sock a few dingers?'
 ]
 
-months = ['mar30', 'jan30', 'dec29', 'nov29', 'oct29', 'aug29', 'jun29', 'apr29', 'mar29', 'feb29', 'jan29', 'dec28', 'oct28', 'aug28']
+months = ['jun30', 'mar30', 'jan30', 'dec29', 'nov29', 'oct29', 'aug29', 'jun29', 'apr29', 'mar29', 'feb29', 'jan29', 'dec28', 'oct28', 'aug28']
 currMonth = months[0]
 reversed_months = [i for i in reversed(months)] 
 
@@ -161,3 +161,9 @@ full_team_name = {
 BUTTON_STRING = '<input type="button" value="Player Page" onclick="window.location.href=\'/player/{}\'" />'
 COMPARISON_SEARCH_STRING = '<input type="button" value="Player Page" onclick="window.location.href=\'/compare/{}\'" />'
 COMPARISON_PAGE_STRING = '<input type="button" value="Player Page" onclick="window.location.href=\'/compare/{0}/{1}\'" />'
+
+DB_USER = 'read_connection'
+DB_PASS = 'password123'
+DB_CONNECTION_STRING = f'mongodb://{DB_USER}:{DB_PASS}@ds253368.mlab.com:53368/flask_robit?retryWrites=false'
+DB_NAME_STRING = 'flask_robit'
+

@@ -1,14 +1,49 @@
-from typing import Tuple, List
+from typing import Tuple, List, Any
 
 import pandas as pd
 import json
 
 from ootp_helper.player.run_calculators import runs_to_ratings, ratings_to_runs
-from ootp_helper.color_maps import defense_stat_colors
+from ootp_helper.color_maps import defense_stat_colors, rating_colors
 from ootp_helper.constants import DEF_RAT_COLUMNS, TABLE_PROPERTIES, IND_PIT_COLUMNS, IND_PIT_POT_COLUMNS
 
 
-def generate_defense_table(stats: pd.DataFrame, ratings: pd.DataFrame) -> Tuple[str, str, str]:
+def generate_defensive_ratings_string(listed_pos: str, rendered_ratings: List[dict]) -> str:
+    listed_potential = [item['potential'] for item in rendered_ratings if item['index'] == listed_pos][0]
+
+    reached_positions = [
+        '<font color="{}">{}</font>'.format(rating_colors(item['potential']), item['index'])
+        for item
+        in rendered_ratings
+        if item['index'] != listed_pos and item['potential'] > 40 and item['current'] > 40
+    ]
+
+    unreached_positions = [
+        '<i><font color="{}">{}</font></i>'.format(rating_colors(item['potential']), item['index'])
+        for item
+        in rendered_ratings
+        if item['index'] != listed_pos and item['potential'] > 40 and item['current'] < 40
+    ]
+
+    listed_pos_str = (
+        '<font color="{}"> {} </font>'.format(rating_colors(listed_potential), listed_pos)
+        if listed_potential >= 45
+        else '<font color="{}"> {} ({}) </font>'.format(
+            rating_colors(listed_potential),
+            listed_pos,
+            int(listed_potential),
+        )
+    )
+    other_pos_str = (
+        '({})'.format(', '.join(reached_positions + unreached_positions))
+        if reached_positions or unreached_positions
+        else ''
+    )
+
+    return listed_pos_str + other_pos_str
+
+
+def generate_defense_table(stats: pd.DataFrame, ratings: pd.DataFrame, listed_pos: str) -> Tuple[Any, ...]:
     # make a row of col names
     stats = stats.append(pd.DataFrame([runs_to_ratings(stats.iloc[0])], columns=stats.columns.values))
 
@@ -29,6 +64,9 @@ def generate_defense_table(stats: pd.DataFrame, ratings: pd.DataFrame) -> Tuple[
     # put them into a JSON
     rendered_ratings = stats.iloc[[2, 3]].set_index('Type').T.reset_index().to_json(orient='records')
 
+    # string to display as position on player header
+    pos_string = generate_defensive_ratings_string(listed_pos, json.loads(rendered_ratings))
+
     # make the table
     rendered_stats = stats.iloc[[0, 1]].style.applymap(
         defense_stat_colors,
@@ -39,7 +77,7 @@ def generate_defense_table(stats: pd.DataFrame, ratings: pd.DataFrame) -> Tuple[
         [{'selector': 'th', 'props': [('font-size', '1.2em')]}]
     ).hide_index().render()
 
-    return rendered_ratings, rendered_stats, best_position
+    return rendered_ratings, rendered_stats, best_position, pos_string
 
 
 def generate_rating_table(ratings: pd.DataFrame, is_batter: bool) -> str:

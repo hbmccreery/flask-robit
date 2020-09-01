@@ -1,53 +1,31 @@
 from flask import Flask, render_template, request, redirect, session
 import numpy as np
 import random
-from pymongo import MongoClient
-
-# import matplotlib
-# matplotlib.use('Agg')
 
 from ootp_helper.constants import *
-from ootp_helper.data_reading import create_player_data, create_benchmarks, read_dist_data, create_standings
-from ootp_helper.player.header_text import generate_player_name, generate_player_header, generate_player_stat_string, generate_ratings_header
+from ootp_helper.data_reading import create_player_data, create_benchmarks, read_dist_data
+from ootp_helper.player.header_text import generate_player_name, generate_player_header, generate_player_stat_string, \
+    generate_ratings_header
 from ootp_helper.player.run_calculators import *
 from ootp_helper.player.table_generators import *
 from ootp_helper.position.position_utils import create_position_tables
 from ootp_helper.color_maps import *
-from ootp_helper.utils import clean_tables, create_table_json, get_front_page_data
+from ootp_helper.utils import clean_tables, create_table_json, get_front_page_data, init_db
 from ootp_helper.team.team_utils import add_splits_data, generate_lineup_card
 
-(al_standing_tables, nl_standing_tables, finances) = create_standings()
 (batting_benchmarks, pitching_benchmarks) = create_benchmarks()
 
 # stop rounding my buttons
 pd.set_option('display.max_colwidth', -1)
 
 # database connection
-read_user = 'read_connection'
-read_pass = 'password123'
-client = MongoClient(
-    'mongodb://{0}:{1}@ds253368.mlab.com:53368/flask_robit?retryWrites=false'.format(read_user, read_pass)
-)
-db = client['flask_robit']
+db = init_db()
 
 # the data for columns on the front page
 all_rise = get_front_page_data(db, {'og-1': {'$gte': 0.5}, 'POS': {'$nin': ['RP', 'CL']}})
 all_fall = get_front_page_data(db, {'og-1': {'$lte': -0.5}})
-partial_rise = get_front_page_data(db, {'og-1': {'$gte': 0.5}, 'TM': {'$in': ['COL', 'CIN', 'WAS']}})
-partial_fall = get_front_page_data(db, {'og-1': {'$lte': -0.5}, 'TM': {'$in': ['COL', 'CIN', 'WAS']}})
-
-
-def generate_error_message(message: str):
-    return render_template(
-        'landing.html',
-        col_names=json.dumps([''] + FRONT_PAGE_COLS[1:]),
-        all_rise=json.dumps(all_rise),
-        all_fall=json.dumps(all_fall),
-        partial_rise=json.dumps(partial_rise),
-        partial_fall=json.dumps(partial_fall),
-        error=message,
-        phrase=random.choice(phrases),
-    )
+team_rise = get_front_page_data(db, {'og-1': {'$gte': 0.5}, 'TM': {'$in': ['COL', 'CIN', 'WAS']}})
+team_fall = get_front_page_data(db, {'og-1': {'$lte': -0.5}, 'TM': {'$in': ['COL', 'CIN', 'WAS']}})
 
 
 app = Flask(__name__, static_url_path='/static')
@@ -61,9 +39,9 @@ def landing_page():
         col_names=json.dumps([''] + FRONT_PAGE_COLS[1:]),
         all_rise=json.dumps(all_rise),
         all_fall=json.dumps(all_fall),
-        partial_rise=json.dumps(partial_rise),
-        partial_fall=json.dumps(partial_fall),
-        phrase=random.choice(phrases),
+        partial_rise=json.dumps(team_rise),
+        partial_fall=json.dumps(team_fall),
+        phrase=random.choice(PHRASES),
     )
 
 
@@ -165,7 +143,7 @@ def search_results():
     # find and replace right tags the pandas to_html fucked
     table = table.replace('&lt;', '<').replace('&gt;', '>').replace('HELPER', 'Player Page')
 
-    return render_template('player_select.html', table=table, phrase=random.choice(phrases))
+    return render_template('player_select.html', table=table, phrase=random.choice(PHRASES))
 
 
 @app.route('/search')
@@ -196,7 +174,7 @@ def comp_search_results(helper1=None):
     # find and replace right tags the pandas to_html fucked
     table = table.replace('&lt;', '<').replace('&gt;', '>').replace('HELPER', 'Player Page')
 
-    return render_template('player_select.html', table=table, phrase=random.choice(phrases))
+    return render_template('player_select.html', table=table, phrase=random.choice(PHRASES))
 
 
 @app.route('/compsearch')
@@ -254,13 +232,12 @@ def rising_prospect_page(position=None):
             roster=rising,
             batting_table=None,
             pitching_table=None,
-            phrase=random.choice(phrases),
+            phrase=random.choice(PHRASES),
         )
 
 
 @app.route('/team/<team>')
 def team(team: str):
-
     minors_query = db[months[0]].find({'TM': team, 'Lev': {'$ne': 'MLB'}}).sort('old grade', -1)
     minors_records = [record for record in minors_query]
     minors_records = add_splits_data(minors_records)
@@ -285,23 +262,7 @@ def team(team: str):
 
         pitching_table, batting_table = generate_lineup_card(majors_df)
 
-        team_finances = finances.loc[finances['Name'] == team].iloc[0]
-        header_str_rec = '{0} - {1} ({2} Pythagorean, {3} Robit)' 
-        header_str_fin = 'Budget: {0} | Cash: {1} | Payroll: {2}'
-        header_str_ded = '${:,.0f} in dead money - <br> {}'
-
-        py_diff = team_finances['W'] - team_finances['pW']
-        r_diff = team_finances['W'] - team_finances['rW']
-
-        if py_diff > 0:
-            py_str = '<font color="green"> {} </font>'.format(py_diff)
-        else:
-            py_str = '<font color="red"> {} </font>'.format(py_diff)
-
-        if r_diff > 0:
-            r_str = '<font color="green"> {} </font>'.format(r_diff)
-        else:
-            r_str = '<font color="red"> {} </font>'.format(r_diff)
+        header_str_dead = '${:,.0f} in dead money - <br> {}'
 
         dead_money = total_df.loc[
             (total_df['POT'] < 50) &
@@ -323,20 +284,7 @@ def team(team: str):
         else:
             dead_names = ''
 
-        header_rec = header_str_rec.format(
-            team_finances['W'],
-            team_finances['L'],
-            py_str,
-            r_str,
-        )
-
-        header_fin = header_str_fin.format(
-            team_finances['Budget'],
-            team_finances['Cash'], 
-            team_finances['Payroll'],
-        )
-
-        header_ded = header_str_ded.format(dead_amt, dead_names)
+        header_dead_money = header_str_dead.format(dead_amt, dead_names)
 
     else:
         total_df = minors_df
@@ -344,9 +292,7 @@ def team(team: str):
         majors_data = []
         pitching_table = ''
         batting_table = ''
-        header_rec = ''
-        header_fin = ''
-        header_ded = ''
+        header_dead_money = ''
 
     # other scouts takes
     with_bio = [record for record in db['scout_takes'].find({'TM': team})]
@@ -376,9 +322,7 @@ def team(team: str):
     return render_template(
         'team.html',
         name=full_team_name[team],
-        header_rec=header_rec,
-        header_fin=header_fin,
-        header_ded=header_ded,
+        header_ded=header_dead_money,
         team_logo='../static/team_logos/{}.png'.format(team),
         prospects_columns=prosects_columns,
         prospects_data=prospects_data,
@@ -389,7 +333,7 @@ def team(team: str):
         other_scouts_columns=other_scouts_columns,
         other_scouts_data=other_scouts_data,
         other_scout_indexes=other_scouts_indexes,
-        phrase=random.choice(phrases),
+        phrase=random.choice(PHRASES),
     )
 
 
@@ -434,7 +378,7 @@ def pos(pos: str):
 
     prospects, roster = create_position_tables(db, position_filter, sort_column, sort_order)
 
-    return render_template('team.html', name=pos, prospects=prospects, roster=roster, phrase=random.choice(phrases))
+    return render_template('team.html', name=pos, prospects=prospects, roster=roster, phrase=random.choice(PHRASES))
 
 
 @app.route('/player/<helper>')
@@ -460,7 +404,7 @@ def player(helper):
     subset_drop_cols = ['mwar_mean', 'mwar-1', 'og-1', 'pwoba-1', 'pfip-1']
 
     table = subset.drop(subset_drop_cols, axis=1).style.applymap(
-        rating_colors,
+        background_rating_colors,
         subset=['POT']
     ).applymap(
         highlight_mwar,
@@ -486,14 +430,15 @@ def player(helper):
     bat_splits = generate_splits_table(current_record, BAT_RAT_COLUMNS)
     pit_splits = generate_splits_table(current_record, PIT_RAT_COLUMNS)
 
-    name = generate_player_name(player_records[0])
-    rating_header = generate_ratings_header(subset, bat_splits, pit_splits, war_dist_data)
-    bio = generate_player_header(player_records[0])
-    def_rats, def_stats, best_pos = generate_defense_table(def_stats, def_ratings)
+    def_rats, def_stats, best_pos, pos_str = generate_defense_table(def_stats, def_ratings, current_record['POS'])
     bat_rats = generate_rating_table(bat_ratings, True)
     pit_rats = generate_rating_table(pit_ratings, False)
     other_rats = generate_other_table(other_ratings)
     ind_pit_rats = generate_ind_pitch_table(pitch_ratings)
+
+    name = generate_player_name(player_records[0], pos_str)
+    rating_header = generate_ratings_header(subset, bat_splits, pit_splits, war_dist_data)
+    bio = generate_player_header(player_records[0])
 
     # and a little text snippet of recent ratings changes
     changes = []
@@ -540,7 +485,7 @@ def player(helper):
     other_teams = pd.DataFrame.from_records(other_teams)
 
     other_team_table = other_teams.drop(['_id', 'TM', 'Name'], axis=1).style.applymap(
-        rating_colors,
+        background_rating_colors,
     ).set_properties(
         **{
             'text-align': 'left',
@@ -573,7 +518,7 @@ def player(helper):
         months={'months': reversed_months},
         total_change_str=total_change_str,
         war_dists=war_dist_data,
-        phrase=random.choice(phrases),
+        phrase=random.choice(PHRASES),
     )
 
 
@@ -581,9 +526,9 @@ def player(helper):
 @app.route('/compare/<helper1>')
 def comparison_search(helper1=None):
     if helper1:
-        return render_template('comparisonSearch.html', name=helper1, phrase=random.choice(phrases))
+        return render_template('comparisonSearch.html', name=helper1, phrase=random.choice(PHRASES))
     
-    return render_template('comparisonSearch.html', phrase=random.choice(phrases))
+    return render_template('comparisonSearch.html', phrase=random.choice(PHRASES))
 
 
 @app.route('/compare/<helper1>/<helper2>')
@@ -610,4 +555,4 @@ def comparison(helper1, helper2):
     table = table.replace('&gt;', '>')
     table = table.replace('HELPER', 'Player Page')
 
-    return render_template('comparisons.html', table=table, phrase = random.choice(phrases))
+    return render_template('comparisons.html', table=table, phrase = random.choice(PHRASES))

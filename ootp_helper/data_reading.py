@@ -59,45 +59,6 @@ def render_standing_tables(divs: list, standings: pd.DataFrame, cm, league: bool
     return div_dict
 
 
-def create_standings() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    # read standings from csv, create team link
-    standings = pd.read_csv('csv_data/finances.csv')
-
-    standings['Name'] = standings['Team']
-    standings['Team'] = standings['Team'].apply(
-        lambda x: "<a  href='./team/{}'><img height='50px' src=../static/team_logos/{}.png></a>".format(x, x)
-    )
-
-    standings['pct'] = standings['W'] / (standings['W'] + standings['L'])
-    standings['pct'] = standings['pct'].round(3)
-    standings['r_pct'] = standings['rW'] / (standings['rW'] + standings['rL'])
-    standings['r_pct'] = standings['r_pct'].round(3)
-    standings['diff'] = standings['W'] - standings['rW']
-    standings = standings.sort_values('pct', ascending=False)
-
-    money_cols = ['Payroll', 'Budget', 'TotalRevenue', 'GateRevenue', 'SeasonTickets', 'PlayoffRevenue',
-                  'MerchRevenue', 'MediaRevenue', 'RevenueSharing', 'Cash']
-
-    for col in money_cols:
-        standings[col] = standings[col].map('${:,.0f}'.format)
-
-    standings_subset = standings[['Team', 'division', 'Name', 'Payroll', 'W', 'L', 'pct', 'rW', 'rL', 'r_pct', 'diff']]
-
-    # color map for rendered tables
-    # cm = sns.diverging_palette(240, 10, as_cmap=True)
-
-    # switch for leauge/division tables
-    # lg = True
-
-    # al_standing_tables = render_standing_tables(['ALE', 'ALC', 'ALW'], standings_subset, cm, lg)
-    # nl_standing_tables = render_standing_tables(['NLE', 'NLC', 'NLW'], standings_subset, cm, lg)
-
-    al_standing_tables = pd.DataFrame()
-    nl_standing_tables = pd.DataFrame()
-
-    return al_standing_tables, nl_standing_tables, standings
-
-
 def create_benchmarks() -> Tuple[pd.DataFrame, pd.DataFrame]:
     batting_benchmarks = pd.read_csv('csv_data/batting_benchmarks.csv')
     pitching_benchmarks = pd.read_csv('csv_data/pitching_benchmarks.csv')
