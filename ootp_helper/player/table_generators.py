@@ -9,7 +9,13 @@ from ootp_helper.constants import DEF_RAT_COLUMNS, TABLE_PROPERTIES, IND_PIT_COL
 
 
 def generate_defensive_ratings_string(listed_pos: str, rendered_ratings: List[dict]) -> str:
-    listed_potential = [item['potential'] for item in rendered_ratings if item['index'] == listed_pos][0]
+    listed_potential = [item['potential'] for item in rendered_ratings if item['index'] == listed_pos]
+
+    # pitchers
+    if not listed_potential:
+        return listed_pos
+    else:
+        listed_potential = listed_potential[0]
 
     reached_positions = [
         '<font color="{}">{}</font>'.format(rating_colors(item['potential']), item['index'])
