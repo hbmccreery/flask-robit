@@ -5,7 +5,7 @@ import random
 from ootp_helper.constants import *
 from ootp_helper.data_reading import create_player_data, create_benchmarks, read_dist_data
 from ootp_helper.player.header_text import generate_player_name, generate_player_header, generate_player_stat_string, \
-    generate_ratings_header
+    generate_ratings_header, generate_statsplus_info
 from ootp_helper.player.run_calculators import *
 from ootp_helper.player.table_generators import *
 from ootp_helper.position.position_utils import create_position_tables
@@ -386,7 +386,8 @@ def player(helper):
     player_records = [db[month].find_one({'_id': helper}) for month in months]
     player_records = [record for record in player_records if record is not None]
 
-    war_dist_data = db['dist_data'].find_one({'_id': helper})
+    statsplus_record = db[constants.DB_STATSPLUS_TABLE].find_one({'_id': helper})
+    war_dist_data = db[constants.DB_DISTRIBUTIONS_TABLE].find_one({'_id': helper})
 
     subset = pd.DataFrame.from_records(player_records)[PLAYER_SUBSET]
     subset.insert(loc=5, column='og80', value=(subset['mwar_mean'] * 0.8 + subset['POT'] / 50))
@@ -436,9 +437,10 @@ def player(helper):
     other_rats = generate_other_table(other_ratings)
     ind_pit_rats = generate_ind_pitch_table(pitch_ratings)
 
-    name = generate_player_name(player_records[0], pos_str)
+    name = generate_player_name(player_records[0], pos_str, statsplus_record)
     rating_header = generate_ratings_header(subset, bat_splits, pit_splits, war_dist_data)
     bio = generate_player_header(player_records[0])
+    statsplus_info = generate_statsplus_info(statsplus_record, db) if statsplus_record else None
 
     # and a little text snippet of recent ratings changes
     changes = []
@@ -518,6 +520,7 @@ def player(helper):
         months={'months': reversed_months},
         total_change_str=total_change_str,
         war_dists=war_dist_data,
+        statsplus_info=statsplus_info,
         phrase=random.choice(PHRASES),
     )
 

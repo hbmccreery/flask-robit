@@ -1,7 +1,7 @@
 <!doctype html>
 <head>
   <link rel= "stylesheet" type= "text/css" href= "../static/styles/style.css">
-  <title>Development: {% if name %} {{name}} {% else %} ??? {% endif %}</title>
+  <title> Player Development </title>
   <script type="text/javascript" src="../static/d3.min.js"></script>
 </head>
   <body>
@@ -30,7 +30,7 @@
   <hr></hr>
 
     {% if name %}
-    <h1>  {{name|safe}}  </h1>
+    <p>  {{name|safe}}  <p>
     {% if rating_header %}
     <p style="font-size:150%;"> {{rating_header|safe}} </p>
     {% endif %}
@@ -59,6 +59,12 @@
     <div class='row' id="ratings">
       <!-- d3 code will be inserted here -->
     </div>
+
+    {% if statsplus_info %}
+        <div id='statsplus_info'>
+        {{ statsplus_info | safe }}
+        </div>
+    {% endif %}
 
     <div class='row' id='other_teams'>
       {% if other_team_table %}

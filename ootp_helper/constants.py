@@ -166,4 +166,7 @@ DB_USER = 'read_connection'
 DB_PASS = 'password123'
 DB_CONNECTION_STRING = f'mongodb://{DB_USER}:{DB_PASS}@ds253368.mlab.com:53368/flask_robit?retryWrites=false'
 DB_NAME_STRING = 'flask_robit'
+DB_STATSPLUS_TABLE = 'statsplus'
+DB_DISTRIBUTIONS_TABLE = 'dist_data'
 
+STATSPLUS_PLAYER_FORMAT = 'https://statsplus.net/oblootp/player/{id}?page={page}'

@@ -21,3 +21,4 @@ urllib3==1.13.1
 virtualenv==15.0.1
 Werkzeug==0.14.1
 pymongo==3.10.1
+bs4==0.0.1

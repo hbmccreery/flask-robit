@@ -1,12 +1,18 @@
+import requests
+
 import pandas as pd
 import numpy as np
 
+from typing import Optional
+from bs4 import BeautifulSoup
+
 from ootp_helper.color_maps import *
 from ootp_helper.player.run_calculators import calculate_batting_runs, calculate_pitching_runs
+from ootp_helper.constants import STATSPLUS_PLAYER_FORMAT, DB_STATSPLUS_TABLE
 
 
-def generate_player_name(player_record: dict, best_pos: str) -> str:
-    return '{0} {1} (<a href="../team/{2}">{2}</a> {3}) {4} {5}'.format(
+def generate_player_name(player_record: dict, best_pos: str, statsplus: Optional[dict]) -> str:
+    name_string = '<h1 style="display: inline"> {0} {1} (<a href="../team/{2}">{2}</a> {3}) {4} {5} </h1>'.format(
         best_pos,
         player_record['Name'],
         player_record['TM'],
@@ -14,6 +20,14 @@ def generate_player_name(player_record: dict, best_pos: str) -> str:
         '<i>"{}"</i>'.format(player_record['Nickname']) if player_record['Nickname'] != '' else '',
         ' - On 40' if player_record['ON40'] == 'Yes' else '',
     )
+
+    if not statsplus:
+        return name_string
+
+    player_url = STATSPLUS_PLAYER_FORMAT.format(id=statsplus['statsplus_id'], page='dash')
+    statsplus_string = '<i><a href={} style="font-size: 150%"> OBL StatsPlus </a></i>'.format(player_url)
+
+    return name_string + statsplus_string
 
 
 def generate_war_probabilities_styled(war_dists: dict) -> str:
@@ -58,7 +72,6 @@ def generate_war_probabilities_styled(war_dists: dict) -> str:
         return '<h2> Batter: {} <br/> Pitcher: {} </h2>'.format(bat_str, pit_str)
 
     return '<h2> {} </h2>'.format(bat_str if bat_str else pit_str)
-
 
 
 def generate_player_header(player: dict) -> str:
@@ -130,7 +143,12 @@ def generate_player_stat_string(player: pd.Series) -> str:
     )
 
 
-def generate_ratings_header(df: pd.DataFrame, bat_splits: dict, pit_splits: dict, war_dists: dict) -> str:
+def generate_ratings_header(
+        df: pd.DataFrame,
+        bat_splits: dict,
+        pit_splits: dict,
+        war_dists: dict,
+) -> str:
 
     woba_rhp, runs_rhp = calculate_batting_runs(bat_splits['r'])
     woba_lhp, runs_lhp = calculate_batting_runs(bat_splits['l'])
@@ -198,3 +216,22 @@ def generate_ratings_header(df: pd.DataFrame, bat_splits: dict, pit_splits: dict
     )
 
     return ratings_header + ' <br/> ' + generate_war_probabilities_styled(war_dists)
+
+
+def generate_statsplus_info(statsplus: dict, db) -> str:
+    r = requests.get(STATSPLUS_PLAYER_FORMAT.format(id=statsplus['statsplus_id'], page='trade'))
+    soup = BeautifulSoup(r.text)
+    trade_table = soup.select('table[class*=playertrade]')[0].prettify()
+
+    team = soup.find('div', {'class': 'playertopright'}).find('a')
+    team_name = team.text
+    team_id = team['href'].replace('/oblootp/team/', '')
+    team_info = db[DB_STATSPLUS_TABLE].find_one({'team_id': int(team_id)})
+
+    team_string = '<h3>Statsplus - Org: {org} | Lev: {lev} | Team: {tm}</h3>'.format(
+        org=team_info['TM'],
+        lev=team_info['Lev'],
+        tm=team_name
+    )
+
+    return team_string + ' <h3> Trade History </h3> ' + trade_table + '<br/>'
