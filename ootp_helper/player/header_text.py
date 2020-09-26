@@ -222,6 +222,7 @@ def generate_statsplus_info(statsplus: dict, db) -> str:
     r = requests.get(STATSPLUS_PLAYER_FORMAT.format(id=statsplus['statsplus_id'], page='trade'))
     soup = BeautifulSoup(r.text)
     trade_table = soup.select('table[class*=playertrade]')[0].prettify()
+    trade_table = trade_table.replace('/oblootp', '//www.statsplus.net/oblootp')
 
     team = soup.find('div', {'class': 'playertopright'}).find('a')
     team_name = team.text
