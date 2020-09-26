@@ -26,7 +26,7 @@ def clean_tables(subset, table_name, include_team=False, team_pot=''):
     round_three = ['woba', 'woba_mean']
     round_two = ['og-1', 'mwar-1', 'fip', 'fip_mean']
     round_one = ['old grade', 'mwar_mean']
-    round_zero = POT_COLS + ['POT']
+    round_zero = ['POT']
 
     subset[round_three] = subset[round_three].round(3)
     subset[round_two] = subset[round_two].round(2)

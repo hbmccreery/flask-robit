@@ -4,13 +4,16 @@ from typing import Tuple
 
 from ootp_helper.constants import months
 from ootp_helper.utils import clean_tables
+from ootp_helper.team.team_utils import add_splits_data
 
 
 def create_position_tables(db: MongoClient, player_filter: dict, sort_column: str, sort_order: int) -> Tuple[str, str]:
     ascending = False if sort_order == -1 else True
 
     records = db[months[0]].find(player_filter).sort(sort_column, sort_order)
-    pos_df = pd.DataFrame.from_records([x for x in records]).rename({'_id': 'HELPER'}, axis=1)
+    records = [x for x in records]
+    records = add_splits_data(records)
+    pos_df = pd.DataFrame.from_records(records).rename({'_id': 'HELPER'}, axis=1)
 
     minors_subset = pos_df.loc[pos_df['Lev'] != 'MLB'].iloc[0:50]
     minors_subset.insert(loc=4, column='rank', value=minors_subset[sort_column].rank(ascending=ascending))
