@@ -10,7 +10,7 @@ from ootp_helper.player.run_calculators import *
 from ootp_helper.player.table_generators import *
 from ootp_helper.position.position_utils import create_position_tables
 from ootp_helper.color_maps import *
-from ootp_helper.utils import clean_tables, create_table_json, get_front_page_data, init_db
+from ootp_helper.utils import clean_tables, create_table_json, get_front_page_data, init_db, generate_error_message
 from ootp_helper.team.team_utils import add_splits_data, generate_lineup_card
 
 (batting_benchmarks, pitching_benchmarks) = create_benchmarks()
