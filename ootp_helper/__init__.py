@@ -236,6 +236,12 @@ def rising_prospect_page(position=None):
         )
 
 
+@app.route('/teams/<page>')
+def statsplus_team_redirect(page: str):
+    team_id = page.replace('team_', '').replace('.html', '')
+    return redirect('/team/{}'.format(constants.STATSPLUS_TEAM_ID_MAP[int(team_id)]))
+
+
 @app.route('/team/<team>')
 def team(team: str):
     minors_query = db[months[0]].find({'TM': team, 'Lev': {'$ne': 'MLB'}}).sort('old grade', -1)
@@ -381,6 +387,18 @@ def pos(pos: str):
     return render_template('team.html', name=pos, prospects=prospects, roster=roster, phrase=random.choice(PHRASES))
 
 
+@app.route('/players/<page>')
+def statsplus_player_redirect(page):
+    player_id = page.replace('player_', '').replace('.html', '')
+    player_helper = db[constants.DB_STATSPLUS_TABLE].find_one({'statsplus_id': player_id})
+
+    if player_helper:
+        return redirect('/player/{}'.format(player_helper['_id']))
+
+    else:
+        return generate_error_message('Player not found.')
+
+
 @app.route('/player/<helper>')
 def player(helper):
     player_records = [db[month].find_one({'_id': helper}) for month in months]
@@ -440,7 +458,9 @@ def player(helper):
     name = generate_player_name(player_records[0], pos_str, statsplus_record)
     rating_header = generate_ratings_header(subset, bat_splits, pit_splits, war_dist_data)
     bio = generate_player_header(player_records[0])
-    statsplus_info = generate_statsplus_info(statsplus_record, db) if statsplus_record else None
+    sp_info = generate_statsplus_info(statsplus_record, db) if statsplus_record else (None, None, None, None, None)
+
+    (statsplus_info, inj, trans, pit_stats, hit_stats) = sp_info
 
     # and a little text snippet of recent ratings changes
     changes = []
@@ -521,6 +541,10 @@ def player(helper):
         total_change_str=total_change_str,
         war_dists=war_dist_data,
         statsplus_info=statsplus_info,
+        injury_data=inj,
+        transaction_data=trans,
+        pit_stats=pit_stats,
+        hit_stats=hit_stats,
         phrase=random.choice(PHRASES),
     )
 

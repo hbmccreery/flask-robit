@@ -1,3 +1,4 @@
+unidecode
 chardet==2.3.0
 click==6.7
 cycler==0.10.0

@@ -168,5 +168,54 @@ DB_CONNECTION_STRING = f'mongodb://{DB_USER}:{DB_PASS}@ds253368.mlab.com:53368/f
 DB_NAME_STRING = 'flask_robit'
 DB_STATSPLUS_TABLE = 'statsplus'
 DB_DISTRIBUTIONS_TABLE = 'dist_data'
+DB_TRANSACTIONS_TABLE = 'transactions'
+DB_TEAM_STATSPLUS_TABLE = 'statsplus_team'
 
 STATSPLUS_PLAYER_FORMAT = 'https://statsplus.net/oblootp/player/{id}?page={page}'
+
+TXN_TYPE_MAP = {
+    'contract_renewed': 'Renewal',
+    'majors_signing': 'FA Signing',
+    'trade': 'Trade',
+    'minors_signing': 'MiLB Deal',
+    'waiver_claim': 'Waivers',
+    'drafted': 'Drafted',
+}
+
+INJ_TYPE_MAP = {
+    'new_injury': 'New',
+    'setback': 'Setback',
+}
+
+STATSPLUS_TEAM_ID_MAP = {
+    31: 'ARI',
+    32: 'ATL',
+    33: 'BAL',
+    34: 'BOS',
+    35: 'CWS',
+    36: 'CHC',
+    37: 'CIN',
+    38: 'CLE',
+    39: 'COL',
+    40: 'DET',
+    41: 'MIA',
+    42: 'HOU',
+    43: 'KC',
+    44: 'LAA',
+    45: 'LAD',
+    46: 'MIL',
+    47: 'MIN',
+    48: 'NYY',
+    49: 'NYM',
+    50: 'OAK',
+    51: 'PHI',
+    52: 'PIT',
+    53: 'SD',
+    54: 'SEA',
+    55: 'SF',
+    56: 'STL',
+    57: 'TB',
+    58: 'TEX',
+    59: 'TOR',
+    60: 'WAS',
+}

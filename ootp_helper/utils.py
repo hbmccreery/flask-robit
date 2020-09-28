@@ -1,7 +1,7 @@
 import pymongo
 import json
 import random
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from flask import render_template
 
 from ootp_helper.constants import CLEAN_TABLES_COLS, POT_COLS, BUTTON_STRING, TABLE_PROPERTIES, months, FRONT_PAGE_COLS, \
@@ -123,18 +123,18 @@ def init_db() -> pymongo.mongo_client:
 
 def generate_error_message(
         message: str,
-        all_rise: List[dict],
-        all_fall: List[dict],
-        team_rise: List[dict],
-        team_fall: List[dict]
+        all_rise: Optional[List[dict]] = None,
+        all_fall: Optional[List[dict]] = None,
+        team_rise: Optional[List[dict]] = None,
+        team_fall: Optional[List[dict]] = None
 ):
     return render_template(
         'landing.html',
         col_names=json.dumps([''] + FRONT_PAGE_COLS[1:]),
-        all_rise=json.dumps(all_rise),
-        all_fall=json.dumps(all_fall),
-        partial_rise=json.dumps(team_rise),
-        partial_fall=json.dumps(team_fall),
+        all_rise=json.dumps(all_rise) if all_rise else '',
+        all_fall=json.dumps(all_fall) if all_rise else '',
+        partial_rise=json.dumps(team_rise) if all_rise else '',
+        partial_fall=json.dumps(team_fall) if all_rise else '',
         error=message,
         phrase=random.choice(PHRASES),
     )

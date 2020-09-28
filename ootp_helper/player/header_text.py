@@ -3,12 +3,14 @@ import requests
 import pandas as pd
 import numpy as np
 
-from typing import Optional
+from typing import Optional, Tuple
 from bs4 import BeautifulSoup
+from unidecode import unidecode
 
 from ootp_helper.color_maps import *
 from ootp_helper.player.run_calculators import calculate_batting_runs, calculate_pitching_runs
-from ootp_helper.constants import STATSPLUS_PLAYER_FORMAT, DB_STATSPLUS_TABLE
+from ootp_helper.constants import STATSPLUS_PLAYER_FORMAT, DB_STATSPLUS_TABLE, DB_TRANSACTIONS_TABLE, TXN_TYPE_MAP, \
+    INJ_TYPE_MAP
 
 
 def generate_player_name(player_record: dict, best_pos: str, statsplus: Optional[dict]) -> str:
@@ -218,11 +220,110 @@ def generate_ratings_header(
     return ratings_header + ' <br/> ' + generate_war_probabilities_styled(war_dists)
 
 
-def generate_statsplus_info(statsplus: dict, db) -> str:
-    r = requests.get(STATSPLUS_PLAYER_FORMAT.format(id=statsplus['statsplus_id'], page='trade'))
+def format_pitching_row(item: dict) -> dict:
+    top_level_keys = ['Year', 'Team', 'G', 'IP', 'K%', 'BB%', 'HR%', 'ERA', 'FIP', 'xFIP', 'WAR']
+
+    return {
+        key: item.get(key, None)
+        for key
+        in top_level_keys
+    }
+
+
+def format_hitting_row(item: dict) -> dict:
+    top_level_keys = ['Year', 'Team', 'G', 'PA', 'K%', 'BB%', 'AVG', 'OBP', 'SLG', 'BABIP', 'wRC+', 'WAR']
+
+    item['K%'] = '{:.0f}%'.format(100 * int(item['K']) / int(item['PA'])) if item['PA'] != '0' else None
+    item['BB%'] = '{:.0f}%'.format(100 * int(item['BB']) / int(item['PA'])) if item['PA'] != '0' else None
+
+    return {
+        key: item.get(key, None)
+        for key
+        in top_level_keys
+    }
+
+
+def format_statsplus_table(statsplus_table) -> Optional[list]:
+    if statsplus_table is None:
+        return None
+
+    headers = [item.text for item in statsplus_table.findAll('th')]
+    total_headers = [headers[0]] + headers[3:]
+
+    data = [
+        [x.text for x in row.findAll('td')]
+        for row
+        in statsplus_table.findAll('tr')[1:]
+    ]
+
+    nontotal_with_headers = [dict(zip(headers, row)) for row in data if len(headers) == len(row)]
+    total_with_headers = [
+        {**dict(zip(total_headers, row)), **{'Year': 'Total'}} for row in data if len(total_headers) == len(row)
+    ]
+
+    data_with_headers = nontotal_with_headers + total_with_headers
+
+    for item in data_with_headers:
+        item['Team'] = item['Team'].split('\n')[2]
+
+    return data_with_headers
+
+
+def build_statsplus_data(soup, table_class: str, format_fxn) -> Tuple[Optional[list], Optional[list]]:
+    pitch_tables = soup.select('table[class*={}]'.format(table_class))
+
+    if len(pitch_tables) == 2:
+        majors = [format_fxn(item) for item in format_statsplus_table(pitch_tables[0])]
+        minors = [format_fxn(item) for item in format_statsplus_table(pitch_tables[1])]
+
+        return majors, minors
+
+    elif len(pitch_tables) == 1:
+        minors = [format_fxn(item) for item in format_statsplus_table(pitch_tables[0])]
+
+        return [], minors
+
+    return [], []
+
+
+def parse_draft_info(line_body: str) -> str:
+    draft_round = line_body[line_body.find('Round')+5:line_body.find(',')].strip()
+    draft_pick = line_body[line_body.find('Pick')+4:].strip()
+    draft_pick = draft_pick[:draft_pick.find(',')]
+
+    return 'Round {} Pick {}'.format(draft_round, draft_pick)
+
+
+def format_transaction_row(item: dict) -> dict:
+    return {
+        'date': item['date'],
+        'type': TXN_TYPE_MAP.get(item['txn_type'], item['txn_type']),
+        'to': item['to'],
+        'from': item['from'] if item['txn_type'] != 'drafted' else parse_draft_info(item['line_body']),
+        'amount': '${:,.0f}'.format(item['amount']) if item['amount'] else None,
+        'years': item['contract_length'],
+        'detail': item['line_body'][item['line_body'].find('[G]')+3:],
+    }
+
+
+def format_injury_row(item: dict) -> dict:
+    return{
+        'date': item['date'],
+        'info': INJ_TYPE_MAP.get(item['injury_detail'], item['injury_detail']),
+        'type': item.get('injury_name', '').lower(),
+        'length': item.get('injury_length', '').replace('one', '1').replace('.', ''),
+        'detail': item['line_body'][item['line_body'].find('[I]') + 3:].strip(),
+    }
+
+
+def generate_statsplus_info(statsplus: dict, db) -> Tuple[str, list, list, tuple, tuple]:
+    r = requests.get(STATSPLUS_PLAYER_FORMAT.format(id=statsplus['statsplus_id'], page='pitch'))
     soup = BeautifulSoup(r.text)
-    trade_table = soup.select('table[class*=playertrade]')[0].prettify()
-    trade_table = trade_table.replace('/oblootp', '//www.statsplus.net/oblootp')
+    pitching_data = build_statsplus_data(soup, 'player-pitch-table', format_pitching_row)
+
+    r = requests.get(STATSPLUS_PLAYER_FORMAT.format(id=statsplus['statsplus_id'], page='hit'))
+    soup = BeautifulSoup(r.text)
+    hitting_data = build_statsplus_data(soup, 'player-bat-table', format_hitting_row)
 
     team = soup.find('div', {'class': 'playertopright'}).find('a')
     team_name = team.text
@@ -235,4 +336,27 @@ def generate_statsplus_info(statsplus: dict, db) -> str:
         tm=team_name
     )
 
-    return team_string + ' <h3> Trade History </h3> ' + trade_table + '<br/>'
+    transaction_info_db = db[DB_TRANSACTIONS_TABLE].find({'player': statsplus['statsplus_id']}, {'_id': 0})
+    transaction_records = [item for item in transaction_info_db]
+
+    injuries = [
+        format_injury_row(item)
+        for item
+        in transaction_records
+        if item['line_type'] == 'injury'
+    ]
+
+    transactions = [
+        format_transaction_row(item)
+        for item
+        in transaction_records
+        if item['line_type'] == 'transaction'
+    ]
+
+    return (
+        team_string,
+        injuries,
+        transactions,
+        pitching_data,
+        hitting_data,
+    )

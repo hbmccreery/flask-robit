@@ -3,6 +3,9 @@
   <link rel= "stylesheet" type= "text/css" href= "../static/styles/style.css">
   <title> Player Development </title>
   <script type="text/javascript" src="../static/d3.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css"/>
+    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
 </head>
   <body>
   <h1> <a href = "../"><img src="../static/bender.png", width="5%"> OOTP Robit</a></h1>
@@ -60,12 +63,6 @@
       <!-- d3 code will be inserted here -->
     </div>
 
-    {% if statsplus_info %}
-        <div id='statsplus_info'>
-        {{ statsplus_info | safe }}
-        </div>
-    {% endif %}
-
     <div class='row' id='other_teams'>
       {% if other_team_table %}
       {{other_team_table|safe}}
@@ -111,6 +108,22 @@
         </div>
     <hr/>
 
+    {% if statsplus_info %}
+        <div id='statsplus_info'>
+            {{ statsplus_info | safe }}
+        </div>
+        <div class = "row" style="margin-bottom: 50px">
+            <div class="column" style="max-width:45%">
+                <table id="injuries" class="display" style="width:100%; margin-left: 0"></table>
+            </div>
+            <div class="column" style="margin-left: 5%; max-width:45%">
+                <table id="transactions" class="display" style="width:100%; margin-left: 0"></table>
+            </div>
+        </div>
+    {% endif %}
+
+    <hr/>
+
     <h3> Development </h3>
     <div class="row">
       <div class="column" id="development_og">
@@ -134,6 +147,39 @@
       </div>
     </div>
   {% else %}
+  {% endif %}
+
+  <hr/>
+
+  {% if statsplus_info %}
+    <div class="row">
+        {% if pit_stats[0]|length > 0 %}
+            <div class="column" style="max-width: 800px; margin-bottom: 20px; margin-right: 10px">
+                <h3> Majors Pitching Data </h3>
+                <table id="pitch-stats-mj" class="display compact cell-border" style="width:100%; margin-left: 0"></table>
+            </div>
+        {% endif %}
+        {% if pit_stats[1]|length > 0 %}
+            <div class="column" style="max-width: 800px; margin-bottom: 20px">
+                <h3> Minors Pitching Data </h3>
+                <table id="pitch-stats-mn" class="display compact cell-border" style="width:100%; margin-left: 0"></table>
+            </div>
+        {% endif %}
+    </div>
+      <div class="row">
+        {% if hit_stats[0]|length > 0 %}
+            <div class="column" style="max-width: 800px; margin-bottom: 20px; margin-right: 10px">
+                <h3> Majors Hitting Data </h3>
+                <table id="hit-stats-mj" class="display compact cell-border" style="width:100%; margin-left: 0"></table>
+            </div>
+        {% endif %}
+        {% if hit_stats[1]|length > 0 %}
+            <div class="column" style="max-width: 800px; margin-bottom: 20px">
+                <h3> Minors Hitting Data </h3>
+                <table id="hit-stats-mn" class="display compact cell-border" style="width:100%; margin-left: 0"></table>
+            </div>
+        {% endif %}
+    </div>
   {% endif %}
 </body>
 
@@ -597,5 +643,160 @@
           .text(bat_benchmarks[i]['lev']);
     }
   }
+
+</script>
+
+
+<script type="text/javascript">
+    // TRANSACTION + INJURY TABLES
+    var injuryData = {{ injury_data | tojson }};
+    var transactionData = {{ transaction_data | tojson }};
+    var pitchStatData = {{ pit_stats | tojson }};
+    var hitStatData = {{ hit_stats | tojson }};
+
+    var majorsPitchStatData = pitchStatData[0];
+    var minorsPitchStatData = pitchStatData[1];
+    var majorsHitStatData = hitStatData[0];
+    var minorsHitStatData = hitStatData[1];
+
+    const injuryColumns = [
+        {className: 'details-control', orderable: false, data: null, defaultContent: ''},
+        {title: 'Date', data: 'date'},
+        {title: 'Info', data: 'info'},
+        {title: 'Type', data: 'type'},
+        {title: 'Length', data: 'length'}
+    ];
+
+    const transactionColumns = [
+        {className: 'details-control', orderable: false, data: null, defaultContent: ''},
+        {title: 'Date', data: 'date'},
+        {title: 'Type', data: 'type'},
+        {title: 'To', data: 'to'},
+        {title: 'From', data: 'from'},
+        {title: 'Amount', data: 'amount'},
+        {title: 'Years', data: 'years'}
+    ];
+
+    const pitchStatColumns = [
+        {title: 'Year', data: 'Year'},
+        {title: 'TM', data: 'Team'},
+        {title: 'G', data: 'G'},
+        {title: 'IP', data: 'IP'},
+        {title: 'K%', data: 'K%'},
+        {title: 'BB%', data: 'BB%'},
+        {title: 'HR%', data: 'HR%'},
+        {title: 'ERA', data: 'ERA'},
+        {title: 'FIP', data: 'FIP'},
+        {title: 'xFIP', data: 'xFIP'},
+        {title: 'WAR', data: 'WAR'},
+    ];
+
+    const hitStatColumns = [
+        {title: 'Year', data: 'Year'},
+        {title: 'TM', data: 'Team'},
+        {title: 'G', data: 'G'},
+        {title: 'PA', data: 'PA'},
+        {title: 'K%', data: 'K%'},
+        {title: 'BB%', data: 'BB%'},
+        {title: 'AVG', data: 'AVG'},
+        {title: 'OBP', data: 'OBP'},
+        {title: 'SLG', data: 'SLG'},
+        {title: 'BABIP', data: 'BABIP'},
+        {title: 'wRC+', data: 'wRC+'},
+        {title: 'WAR', data: 'WAR'},
+    ];
+
+    function formatDetail(data) {
+        return '<div> ' + data.detail + ' </div>'
+    }
+
+    $(document).ready(function() {
+        const injuriesTable = $('#injuries').DataTable( {
+            data: injuryData,
+            columns: injuryColumns,
+            pageLength: -1,
+            dom: '<<t>>',
+        } );
+
+        const transactionsTable = $('#transactions').DataTable( {
+            data: transactionData,
+            columns: transactionColumns,
+            pageLength: -1,
+            dom: '<<t>>',
+        } );
+
+        if(majorsPitchStatData.length > 0) {
+            const mjPitchStatTable = $('#pitch-stats-mj').DataTable({
+                data: majorsPitchStatData,
+                columns: pitchStatColumns,
+                order: [],
+                pageLength: -1,
+                dom: '<<t>>',
+            });
+        }
+
+        if(minorsPitchStatData.length > 0) {
+            const mnPitchStatTable = $('#pitch-stats-mn').DataTable({
+                data: minorsPitchStatData,
+                columns: pitchStatColumns,
+                order: [],
+                pageLength: -1,
+                dom: '<<t>>',
+            });
+        }
+
+        if(majorsHitStatData.length > 0) {
+            const mnHitStatTable = $('#hit-stats-mj').DataTable({
+                data: majorsHitStatData,
+                columns: hitStatColumns,
+                order: [],
+                pageLength: -1,
+                dom: '<<t>>',
+            });
+        }
+
+        if(minorsHitStatData.length > 0) {
+            const mnHitStatTable = $('#hit-stats-mn').DataTable({
+                data: minorsHitStatData,
+                columns: hitStatColumns,
+                order: [],
+                pageLength: -1,
+                dom: '<<t>>',
+            });
+        }
+
+        // Add event listener for opening and closing details
+        $('#transactions tbody').on('click', 'td.details-control', function () {
+            var tr = $(this).closest('tr');
+            var row = transactionsTable.row( tr );
+
+            if ( row.child.isShown() ) {
+                // This row is already open - close it
+                row.child.hide();
+                tr.removeClass('shown');
+            }
+            else {
+                // Open this row
+                row.child( formatDetail(row.data()) ).show();
+                tr.addClass('shown');
+            }
+        } );
+
+        $('#injuries tbody').on('click', 'td.details-control', function () {
+            var tr = $(this).closest('tr');
+            var row = injuriesTable.row( tr );
+
+            if ( row.child.isShown() ) {
+                // This row is already open - close it
+                row.child.hide();
+                tr.removeClass('shown');
+            }
+            else {
+                // Open this row
+                row.child( formatDetail(row.data()) ).show();
+                tr.addClass('shown');
+            }
+        } );
+    });
 
 </script>

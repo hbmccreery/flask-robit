@@ -60,3 +60,13 @@ tr:hover            { background-color: #FFDC00;}
 thead input {
   width: 100%;
 }
+
+td.details-control {
+    background: url('../expand_icon.png') no-repeat center center;
+    background-size: 50%;
+    cursor: pointer;
+}
+tr.shown td.details-control {
+    background: url('../expand_icon.png') no-repeat center center;
+    background-size: 50%;
+}
