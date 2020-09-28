@@ -113,10 +113,10 @@
             {{ statsplus_info | safe }}
         </div>
         <div class = "row" style="margin-bottom: 50px">
-            <div class="column" style="max-width:45%">
+            <div class="column" style="max-width:49%">
                 <table id="injuries" class="display" style="width:100%; margin-left: 0"></table>
             </div>
-            <div class="column" style="margin-left: 5%; max-width:45%">
+            <div class="column" style="margin-left: 2%; max-width:49%">
                 <table id="transactions" class="display" style="width:100%; margin-left: 0"></table>
             </div>
         </div>
@@ -154,13 +154,13 @@
   {% if statsplus_info %}
     <div class="row">
         {% if pit_stats[0]|length > 0 %}
-            <div class="column" style="max-width: 800px; margin-bottom: 20px; margin-right: 10px">
+            <div class="column" style="margin-bottom: 20px; margin-right: 10px">
                 <h3> Majors Pitching Data </h3>
                 <table id="pitch-stats-mj" class="display compact cell-border" style="width:100%; margin-left: 0"></table>
             </div>
         {% endif %}
         {% if pit_stats[1]|length > 0 %}
-            <div class="column" style="max-width: 800px; margin-bottom: 20px">
+            <div class="column" style="margin-bottom: 20px">
                 <h3> Minors Pitching Data </h3>
                 <table id="pitch-stats-mn" class="display compact cell-border" style="width:100%; margin-left: 0"></table>
             </div>
@@ -168,13 +168,13 @@
     </div>
       <div class="row">
         {% if hit_stats[0]|length > 0 %}
-            <div class="column" style="max-width: 800px; margin-bottom: 20px; margin-right: 10px">
+            <div class="column" style="margin-bottom: 20px; margin-right: 10px">
                 <h3> Majors Hitting Data </h3>
                 <table id="hit-stats-mj" class="display compact cell-border" style="width:100%; margin-left: 0"></table>
             </div>
         {% endif %}
         {% if hit_stats[1]|length > 0 %}
-            <div class="column" style="max-width: 800px; margin-bottom: 20px">
+            <div class="column" style="margin-bottom: 20px">
                 <h3> Minors Hitting Data </h3>
                 <table id="hit-stats-mn" class="display compact cell-border" style="width:100%; margin-left: 0"></table>
             </div>
