@@ -16,7 +16,7 @@ from ootp_helper.team.team_utils import add_splits_data, generate_lineup_card, g
 (batting_benchmarks, pitching_benchmarks) = create_benchmarks()
 
 # stop rounding my buttons
-pd.set_option('display.max_colwidth', None)
+pd.set_option('display.max_colwidth', -1)
 
 # database connection
 db = init_db()
