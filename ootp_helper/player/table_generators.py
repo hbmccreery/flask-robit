@@ -8,6 +8,83 @@ from ootp_helper.color_maps import defense_stat_colors, rating_colors
 from ootp_helper.constants import DEF_RAT_COLUMNS, TABLE_PROPERTIES, IND_PIT_COLUMNS, IND_PIT_POT_COLUMNS
 
 
+def create_rating_item_list(record: dict, keys: list) -> list:
+    return [
+        '<font color={}> {} </font>'.format(rating_colors(record[key]), str(int(record[key])))
+        if key in record.keys() else ''
+        for key
+        in keys
+    ]
+
+
+def create_rating_table_row(record: dict, label: str, keys: list) -> str:
+    return '<tr> <td>' + '</td><td>'.join([label] + create_rating_item_list(record, keys)) + '</td> </tr>'
+
+
+def create_rating_table(record: dict, build_dict: dict, header: str) -> str:
+    table_rows = [header] + [
+        create_rating_table_row(record, key, build_dict[key])
+        for key
+        in build_dict.keys()
+    ]
+
+    return f'<table class="ratings-player-inner">{"".join(table_rows)}</table>'
+
+
+def format_player_record(idx: int, record: dict) -> dict:
+    record['mwar'] = max(record['bwar'], record['pwar'])
+    record['index'] = idx
+
+    pitch_names = [
+        col
+        for col
+        in IND_PIT_COLUMNS
+        if record.get(col + 'P', 0) > 20
+    ]
+
+    fielding_ratings = [col for col in DEF_RAT_COLUMNS if record.get(col, 0) > 20]
+
+    bat_table_head = (
+        "<tr> <th> Batting </th> <th> CON </th> <th> GAP </th> <th> POW </th> <th> EYE </th> <th> Ks </th> </tr>"
+    )
+    ind_pit_head = "<tr> <th> Ind Pitch </th> <th>" + "</th><th>".join(pitch_names) + "</th> </tr>"
+    pit_table_head = "<tr> <th> Pitching </th> <th> STU </th> <th> MOV </th> <th> CTL </th> <th> STM </th> </tr>"
+    other_rat_head = "<tr> <th> Name </th> <th> Rating </th> </tr>"
+
+    bat_table_build_dict = {
+        'Current': ['CON', 'GAP', 'POW', 'EYE', 'K'],
+        'Potential': ['CON P', 'GAP P', 'POW P', 'EYE P', 'K P'],
+        'vR': ['CON vR', 'GAP vR', 'POW vR', 'EYE vR', 'K vR'],
+        'vL': ['CON vL', 'GAP vL', 'POW vL', 'EYE vL', 'K vL']
+    }
+
+    pit_table_build_dict = {
+        'Current': ['STU', 'MOV', 'CTL', 'STM'],
+        'Potential': ['STU P', 'MOV P', 'CTL P'],
+        'vR': ['STU vR', 'MOV vR', 'CTL vR'],
+        'vL': ['STU vL', 'MOV vL', 'CTL vL'],
+    }
+
+    ind_pit_table_build_dict = {
+        'Current': pitch_names,
+        'Potential': [name + 'P' for name in pitch_names],
+    }
+
+    def_table_build_dict = {item: [item] for item in fielding_ratings}
+    other_table_build_dict = {item: [item] for item in ['SPE', 'RUN', 'STE']}
+
+    bat_table = create_rating_table(record, bat_table_build_dict, bat_table_head)
+    pit_table = create_rating_table(record, pit_table_build_dict, pit_table_head)
+    ind_pit_table = create_rating_table(record, ind_pit_table_build_dict, ind_pit_head) if pitch_names else ''
+    field_table = create_rating_table(record, def_table_build_dict, other_rat_head) if fielding_ratings else ''
+    other_table = create_rating_table(record, other_table_build_dict, other_rat_head)
+
+    table_list = [f"<td>{table}</td>" for table in [bat_table, pit_table, ind_pit_table, field_table, other_table]]
+    record['detail'] = f'<table><tbody style="vertical-align: top;"><tr>{"".join(table_list)}</tr></tbody></table>'
+
+    return record
+
+
 def generate_defensive_ratings_string(listed_pos: str, rendered_ratings: List[dict]) -> str:
     listed_potential = [item['potential'] for item in rendered_ratings if item['index'] == listed_pos]
 

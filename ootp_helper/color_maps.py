@@ -57,6 +57,7 @@ def rating_colors(rat: int) -> str:
 def background_rating_colors(rat: int) -> str:
     return 'background-color: {}'.format(rating_colors(rat))
 
+
 def highlight_mwar(mwar: float) -> str:
     if type(mwar) is not int and type(mwar) is not float:
         return 'background-color: #FFFFFF'

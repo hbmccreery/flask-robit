@@ -3,9 +3,8 @@ import requests
 import pandas as pd
 import numpy as np
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from bs4 import BeautifulSoup
-from unidecode import unidecode
 
 from ootp_helper.color_maps import *
 from ootp_helper.player.run_calculators import calculate_batting_runs, calculate_pitching_runs
@@ -76,8 +75,28 @@ def generate_war_probabilities_styled(war_dists: dict) -> str:
     return '<h2> {} </h2>'.format(bat_str if bat_str else pit_str)
 
 
+def format_injury_string(inj: str) -> str:
+    if inj == 'Wrecked':
+        return f'<b> <font color="#dd0000"> {inj.upper()} </font> </b>'
+
+    if inj == 'Fragile':
+        return f'<b> <font color="##dd8033"> {inj} </font> </b>'
+
+    return inj
+
+
+def format_personality_string(personality: str) -> str:
+    if personality in ['Captain', 'Fan Fav', 'Prankster', 'Sparkplug']:
+        return f'<b> <font color="#117722"> {personality} </font> </b>'
+
+    if personality in ['Disruptive', 'Outspoken', 'Unmotivated', 'Selfish']:
+        return f'<b> <font color="#dd0000"> {personality} </font> </b>'
+
+    return personality
+
+
 def generate_player_header(player: dict) -> str:
-    line_zero = '<b> HT:</b> {0} | <b> WT:</b> {1} | <b> B/T</b> {2}/{3}'.format(
+    line_zero = '<b> HT/WT </b> {0}, {1} | <b> B/T</b> {2}/{3}'.format(
         player['HT'],
         player['WT'],
         player['B'],
@@ -86,8 +105,8 @@ def generate_player_header(player: dict) -> str:
 
     line_one = '<b> Age: </b> {0} | <b> Inj: </b> {1} | <b> Personality: </b> {2}'.format(
         player['Age'],
-        player['INJ'],
-        player['Type'],
+        format_injury_string(player['INJ'].strip()),
+        format_personality_string(player['Type'].strip()),
     )
 
     line_two = '<b> Leadership: </b> {0} | <b> Loyalty: </b> {1} | <b> Adaptability: </b> {2} | ' \
@@ -146,26 +165,23 @@ def generate_player_stat_string(player: pd.Series) -> str:
 
 
 def generate_ratings_header(
-        df: pd.DataFrame,
+        records: List[dict],
         bat_splits: dict,
         pit_splits: dict,
         war_dists: dict,
 ) -> str:
-
     woba_rhp, runs_rhp = calculate_batting_runs(bat_splits['r'])
     woba_lhp, runs_lhp = calculate_batting_runs(bat_splits['l'])
     fip_rhb, runs_rhb = calculate_pitching_runs(pit_splits['r'])
     fip_lhb, runs_lhb = calculate_pitching_runs(pit_splits['l'])
 
-    df = df.iloc[0:4]
-
-    current_month = df.iloc[0]
-    overall_og_trend = sum(df['og-1'])
-    overall_war_trend = sum(df['mwar-1'])
-    num_positive_og = sum(df['og-1'] > 0)
-    num_negative_og = sum(df['og-1'] < 0)
-    num_positive_war = sum(df['mwar-1'] > 0)
-    num_negative_war = sum(df['mwar-1'] < 0)
+    current_month = records[0]
+    overall_og_trend = sum([x['og-1'] for x in records])
+    overall_war_trend = sum([x['mwar-1'] for x in records])
+    num_positive_og = sum([x['og-1'] > 0 for x in records])
+    num_negative_og = sum([x['og-1'] < 0 for x in records])
+    num_positive_war = sum([x['mwar-1'] > 0 for x in records])
+    num_negative_war = sum([x['mwar-1'] < 0 for x in records])
     current_war = max(current_month['bwar'], current_month['pwar'])
     mark = highlight_mwar_change(overall_war_trend / 2).replace('background-color', 'background')
 
@@ -178,9 +194,9 @@ def generate_ratings_header(
         adv_stat_vl = round(woba_lhp, 3)
         adv_stat_vr = round(woba_rhp, 3)
         adv_stat = round(current_month['woba_mean'], 3)
-        adv_stat_trend = round(sum(df['pwoba-1']), 3)
-        adv_stat_positive = sum(df['pwoba-1'] > 0)
-        adv_stat_negative = sum(df['pwoba-1'] < 0)
+        adv_stat_trend = round(sum([x['pwoba-1'] for x in records]), 3)
+        adv_stat_positive = sum([x['pwoba-1'] > 0 for x in records])
+        adv_stat_negative = sum([x['pwoba-1'] < 0 for x in records])
 
     else:
         adv_stat_type = 'FIP'
@@ -188,9 +204,9 @@ def generate_ratings_header(
         adv_stat_vl = round(fip_lhb, 2)
         adv_stat_vr = round(fip_rhb, 2)
         adv_stat = round(current_month['fip_mean'], 2)
-        adv_stat_trend = round(sum(df['pfip-1']), 2)
-        adv_stat_positive = sum(df['pfip-1'] > 0)
-        adv_stat_negative = sum(df['pfip-1'] < 0)
+        adv_stat_trend = round(sum([x['pfip-1'] for x in records]), 2)
+        adv_stat_positive = sum([x['pfip-1'] > 0 for x in records])
+        adv_stat_negative = sum([x['pfip-1'] < 0 for x in records])
 
     ratings_header = (
         '<h2> <mark style="{0};"> Grade {1} ({2}: +{3}, -{4}) |'
@@ -198,7 +214,7 @@ def generate_ratings_header(
         '{9} {15}/{10} ({11}: +{12} -{13}) {16} vL / {17} vR </mark> </h2>'
     ).format(
         mark,
-        current_month['old grade'],
+        round(current_month['old grade'], 1),
         round(overall_og_trend, 1),
         num_positive_og,
         num_negative_og,
@@ -211,7 +227,7 @@ def generate_ratings_header(
         adv_stat_trend,
         adv_stat_positive,
         adv_stat_negative,
-        current_war,
+        round(current_war, 1),
         adv_stat_now,
         adv_stat_vl,
         adv_stat_vr,

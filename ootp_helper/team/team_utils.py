@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from itertools import product, groupby
 from typing import List, Tuple
+from pymongo import DESCENDING
 
 from ootp_helper.player.run_calculators import calculate_batting_runs, calculate_pitching_runs
 from ootp_helper.player.table_generators import generate_splits_table
@@ -125,3 +126,22 @@ def generate_batting_lineup(team_df: pd.DataFrame) -> str:
 
 def generate_lineup_card(team_df: pd.DataFrame) -> Tuple[str, str]:
     return generate_pitcher_lineup(team_df), generate_batting_lineup(team_df)
+
+
+def generate_team_header(team_abbr: str, db) -> str:
+    team_info = db['team_records'].find_one({'team_abbr': team_abbr.upper()})
+    lg_data = [
+        {
+            **x,
+            'rank': rank + 1
+        }
+        for rank, x
+        in enumerate(db['team_records'].find({'team_lg': team_info['team_lg']}).sort('W_pct', DESCENDING))
+    ]
+
+    div_records = [x for x in lg_data if x['team_div'] == team_info['team_div']]
+
+    return "<br>".join([
+        f"{team_info['W']} - {team_info['L']} ({team_info['pW_delta']} pW, {team_info['xW_delta']} xW)",
+        f"{team_info['RS']} RS - {team_info['RA']} RA ({team_info['RS_delta']} xRS / {team_info['RA_delta']} xRA)",
+    ])

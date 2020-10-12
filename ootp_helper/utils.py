@@ -1,6 +1,9 @@
 import pymongo
 import json
 import random
+
+import pandas as pd
+
 from typing import List, Tuple, Optional
 from flask import render_template
 
@@ -65,10 +68,25 @@ def clean_tables(subset, table_name, include_team=False, team_pot=''):
     return table
 
 
-def create_table_json(subset, include_team=False, team_pot='') -> Tuple[List, List[List]]:
+def create_aggregated_dist_data(record: dict) -> dict:
+    return {
+        'HELPER': record['_id'],
+        'bat3': round(sum([x['p'] for x in record['bat_dist'] if x['WAR'] >= 3]), 2),
+        'bat5': round(sum([x['p'] for x in record['bat_dist'] if x['WAR'] >= 5]), 2),
+        'bat7': round(sum([x['p'] for x in record['bat_dist'] if x['WAR'] >= 7]), 2),
+        'pit3': round(sum([x['p'] for x in record['pit_dist'] if x['WAR'] >= 3]), 2),
+        'pit5': round(sum([x['p'] for x in record['pit_dist'] if x['WAR'] >= 5]), 2),
+        'pit7': round(sum([x['p'] for x in record['pit_dist'] if x['WAR'] >= 7]), 2),
+    }
+
+
+def create_table_json(subset, db, include_team=False) -> Tuple[List, List[List]]:
     insert_cols = CLEAN_TABLES_COLS[:1] + ['TM', 'rank'] + CLEAN_TABLES_COLS[1:] if include_team else CLEAN_TABLES_COLS
 
+    dist_data = [create_aggregated_dist_data(x) for x in db['dist_data'].find({'_id': {'$in': list(subset['HELPER'])}})]
+
     subset = subset[insert_cols]
+    subset = pd.merge(subset, pd.DataFrame(dist_data), how='left')
 
     round_three = ['woba', 'woba_rhp', 'woba_lhp', 'woba_mean']
     round_two = ['og-1', 'mwar-1', 'fip', 'fip_rhb', 'fip_lhb', 'fip_mean']
@@ -82,7 +100,7 @@ def create_table_json(subset, include_team=False, team_pot='') -> Tuple[List, Li
 
     subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
 
-    return_cols = ['' if col == 'HELPER' else col for col in insert_cols]
+    return_cols = ['' if col == 'HELPER' else col for col in subset.columns]
     return_data = subset.values.tolist()
 
     return return_cols, return_data

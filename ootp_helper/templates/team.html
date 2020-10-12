@@ -4,30 +4,13 @@
 <script src="../static/utils.js"></script>
 
 
-<style>
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.dropdown-content {
-  display: none;
-  position: absolute;
-  background-color: #f9f9f9;
-  min-width: 160px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  padding: 12px 16px;
-  z-index: 1;
-}
-
-.dropdown:hover .dropdown-content {
-  display: block;
-}
-</style>
-
 <title>Team Info</title>
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css"/>
 <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css"/>
 <script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
 
 <h1> <a href = "../"><img src="../static/bender.png", width="5%"> OOTP Robit</a></h1>
@@ -60,7 +43,7 @@
 {% endif %}
 
 {% if team_logo %}
- <img src='{{team_logo}}', height='150px', align="middle"> 
+ <img src='{{team_logo}}' height='150px' align="middle">
 {% else %}
 {% endif %}
 
@@ -71,7 +54,7 @@
 {% else %}
 {% endif %}
 
-<hr></hr>
+<hr/>
 
 {% if batting_table and pitching_table %}
     <div class='row'>
@@ -88,31 +71,231 @@
 <hr/>
 
 <h2 style="margin-bottom: 20px"> Major League Roster </h2>
+
+<div class="row" style="margin-bottom: 10px">
+    <div class="col-md-auto" style="padding-right:10px; margin-right: 10px; border-right: 1px solid #ccc;">
+        <a class="fancy-button toggle-majors-bio">Bio</a>
+    </div>
+
+    <div class="col-md-auto" style="margin-right: 10px; border-right: 1px solid #ccc;">
+        <div class="row">
+            <div class="col-md-auto" style="padding-right:10px;">
+                <a class="fancy-button toggle-majors-trad-bat">wOBA</a>
+            </div>
+            <div class="col-md-auto" style="padding-right:10px;">
+                <a class="fancy-button toggle-majors-trad-pit">FIP</a>
+            </div>
+            <div class="col-md-auto" style="padding-right:10px;">
+                <a class="fancy-button toggle-majors-trad-all">All Stat</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-auto" style="margin-right: 10px; border-right: 1px solid #ccc;">
+        <div class="row">
+            <div class="col-md-auto" style="padding-right:10px;">
+                <a class="fancy-button toggle-majors-split-bat">L/R wOBA</a>
+            </div>
+            <div class="col-md-auto" style="padding-right:10px;">
+                <a class="fancy-button toggle-majors-split-pit">L/R FIP</a>
+            </div>
+            <div class="col-md-auto" style="padding-right:10px;">
+                <a class="fancy-button toggle-majors-split-all">All Splits</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-auto" style="margin-right: 10px; border-right: 1px solid #ccc;">
+        <div class="row">
+            <div class="col-md-auto" style="padding-right:10px">
+                <a class="fancy-button toggle-majors-dist-bat">bWAR</a>
+            </div>
+            <div class="col-md-auto" style="padding-right:10px">
+                <a class="fancy-button toggle-majors-dist-pit">pWAR</a>
+            </div>
+            <div class="col-md-auto" style="padding-right:10px">
+                <a class="fancy-button toggle-majors-dist-all">All Dist</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="column" style="max-width: 300px; margin-bottom: 10px; margin-left: 10px;">
+        <label for="majors-age">Age Range: </label>
+        <input type="text" class="slider-label" id="majors-age" readonly>
+        <div id="majors-age-range"></div>
+    </div>
+    <div class="column" style="max-width: 300px; margin-bottom: 10px; margin-left: 30px;">
+        <div>
+            <label for="majors-grade">Grade Change: </label>
+            <input type="text" class="slider-label" id="majors-grade" readonly>
+        </div>
+        <div id="majors-grade-range"></div>
+    </div>
+    <div class="column" style="max-width: 300px; margin-bottom: 10px; margin-left: 30px;">
+        <label for="majors-war">WAR Change: </label>
+        <input type="text" class="slider-label" id="majors-war" readonly>
+        <div id="majors-war-range"></div>
+    </div>
+</div>
+
 <table id="ml-roster" class="display" style="width:100%"></table>
 
 <hr/>
 
 <h2 style="margin-bottom: 20px"> Farm System</h2>
+
+<div class="row" style="margin-bottom: 10px">
+    <div class="col-md-auto" style="padding-right:10px; margin-right: 10px; border-right: 1px solid #ccc;">
+        <a class="fancy-button toggle-minors-bio">Bio</a>
+    </div>
+
+    <div class="col-md-auto" style="margin-right: 10px; border-right: 1px solid #ccc;">
+        <div class="row">
+            <div class="col-md-auto" style="padding-right:10px;">
+                <a class="fancy-button toggle-minors-trad-bat">wOBA</a>
+            </div>
+            <div class="col-md-auto" style="padding-right:10px;">
+                <a class="fancy-button toggle-minors-trad-pit">FIP</a>
+            </div>
+            <div class="col-md-auto" style="padding-right:10px;">
+                <a class="fancy-button toggle-minors-trad-all">All Stat</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-auto" style="margin-right: 10px; border-right: 1px solid #ccc;">
+        <div class="row">
+            <div class="col-md-auto" style="padding-right:10px;">
+                <a class="fancy-button toggle-minors-split-bat">L/R wOBA</a>
+            </div>
+            <div class="col-md-auto" style="padding-right:10px;">
+                <a class="fancy-button toggle-minors-split-pit">L/R FIP</a>
+            </div>
+            <div class="col-md-auto" style="padding-right:10px;">
+                <a class="fancy-button toggle-minors-split-all">All Splits</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-auto" style="margin-right: 10px; border-right: 1px solid #ccc;">
+        <div class="row">
+            <div class="col-md-auto" style="padding-right:10px">
+                <a class="fancy-button toggle-minors-dist-bat">bWAR</a>
+            </div>
+            <div class="col-md-auto" style="padding-right:10px">
+                <a class="fancy-button toggle-minors-dist-pit">pWAR</a>
+            </div>
+            <div class="col-md-auto" style="padding-right:10px">
+                <a class="fancy-button toggle-minors-dist-all">All Dist</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="column" style="max-width: 300px; margin-bottom: 10px; margin-left: 10px;">
+        <label for="minors-age">Age Range: </label>
+        <input type="text" class="slider-label" id="minors-age" readonly>
+        <div id="minors-age-range"></div>
+    </div>
+    <div class="column" style="max-width: 300px; margin-bottom: 10px; margin-left: 30px;">
+        <div>
+            <label for="minors-grade">Grade Change: </label>
+            <input type="text" class="slider-label" id="minors-grade" readonly>
+        </div>
+        <div id="minors-grade-range"></div>
+    </div>
+    <div class="column" style="max-width: 300px; margin-bottom: 10px; margin-left: 30px;">
+        <label for="minors-war">WAR Change: </label>
+        <input type="text" class="slider-label" id="minors-war" readonly>
+        <div id="minors-war-range"></div>
+    </div>
+</div>
+
 <table id="farm-system" class="display" style="width:100%"></table>
 
 <hr/>
 
 <h2 style="margin-bottom: 20px"> Other Scout Ratings </h2>
-    <table id="other-scout-ratings" class="display" style="width:100%"></table>
+<table id="other-scout-ratings" class="display" style="width:100%"></table>
 
 <script>
-    // columns that will always be stylized as ratings
-    const ratingColumns = ['POT'];  //, 'CON P', 'GAP P', 'POW P', 'EYE P', 'K P', 'STU P', 'MOV P', 'CTL P'];
+    // Setup - add a text input to each footer cell
+    const drawHeader = (table, tableTag) => {
+        // remove old header if it exists
+        const headerCount = $(tableTag).find(' thead tr').length;
 
-    // team roster
+        if (headerCount > 1){
+            $(tableTag).find(' thead tr:gt(0)').remove()
+        }
+
+        // draw header
+        $(tableTag + ' thead tr').clone(true).appendTo(tableTag + ' thead');
+        $(tableTag + ' thead tr:eq(1) th').each(function (i) {
+            var title = $(this).text();
+            $(this).html('<input type="text" placeholder="" />');
+
+            $('input', this).on('keyup change', function () {
+                if (table.column(i).search() !== this.value && table.column(i).visible()) {
+                    table.column(i).search(this.value).draw();
+                }
+            });
+        });
+    };
+
+    const toggleColumnDisplay = (table, tableTag, buttonTag, toggleCols, totalCols) => {
+        $('a.' + buttonTag).on( 'click', function (e) {
+            e.preventDefault();
+
+            const colIdx = toggleCols.map((e) => {return totalCols.indexOf(e)});
+
+            // Get the column API object
+            let columns = table.columns(colIdx);
+            let firstColumn = table.column(colIdx[0]);
+
+            // Toggle the visibility
+            columns.visible( ! firstColumn.visible() );
+            drawHeader(table, tableTag);
+        } );
+    };
+
+    const createDisplayString = (vals) => {
+        return ((vals[0] > 0 ? '+' + vals[0] : vals[0]) + " - " + (vals[1] > 0 ? '+' + vals[1] : vals[1]))
+    };
+
+    const rangeSliderFunction = ( sliderVar, colIdx, settings, data, dataIndex, absMax, absMin ) => {
+        if(sliderVar === undefined || settings.nTable.id === 'other-scout-ratings'){
+            return true;
+        }
+
+        const min = parseFloat(sliderVar.slider( "values", 0 ));
+        const max = parseFloat(sliderVar.slider( "values", 1 ));
+        const col = parseFloat(data[colIdx]) || 0; // data[number] = column number
+
+        if(
+            (min === absMin && max === absMax)
+            || (min === absMin && col <= max)
+            || (min <= col && max === absMax)
+        ){
+            return true;
+        }
+
+        return (
+            (min <= col && col <= max)
+            || (isNaN(min) && col <= max)
+            || (min <= col && isNaN(max))
+            || isNaN(min) && isNaN(max)
+        );
+    };
+
     let majorsColNames = {{ majors_columns|safe }};
     let majorsDataSet = {{ majors_data|safe }};
-
     let majorsColumns = majorsColNames.map(function(item) {return {title: item}});
-
     let majorsColDefs = [
         {
-            targets: ratingColumns.map(function(e){return(majorsColNames.indexOf(e))}),
+            targets: majorsColNames.indexOf('POT'),
             createdCell: function (td, cellData, rowData, row, col) {
                 $(td).css('background-color', ratingColorMap(70, 55, 40, 25, cellData, true));
             }
@@ -131,88 +314,14 @@
         },
     ];
 
-    $(document).ready(function() {
-        const majorsTable = $('#ml-roster').DataTable( {
-            data: majorsDataSet,
-            columns: majorsColumns,
-            columnDefs: majorsColDefs,
-            pageLength: 10,
-            dom: '<l<t>p>',
-            order: [[majorsColNames.indexOf('old grade'), 'desc']],
-        } );
-
-        // Setup - add a text input to each footer cell
-        $('#ml-roster thead tr').clone(true).appendTo('#ml-roster thead');
-        $('#ml-roster thead tr:eq(1) th').each(function (i) {
-            var title = $(this).text();
-            $(this).html('<input type="text" placeholder="" />');
-
-            $('input', this).on('keyup change', function () {
-                if (majorsTable.column(i).search() !== this.value) {
-                    majorsTable.column(i).search(this.value).draw();
-                }
-            });
-        });
-    });
-
-
-    // team prospect table
-    let prospectColNames = {{ prospects_columns|safe }};
-    let prospectDataSet = {{ prospects_data|safe }};
-
-    let prospectColumns = prospectColNames.map(function(item) {return {title: item}});
-
-    let prospectsColDefs = [
-        {
-            targets: ratingColumns.map(function(e){return(prospectColNames.indexOf(e))}),
-            createdCell: function (td, cellData, rowData, row, col) {
-                $(td).css('background-color', ratingColorMap(70, 55, 40, 25, cellData, true));
-            }
-        },
-        {
-            targets: prospectColNames.indexOf('mwar_mean'),
-            createdCell: function (td, cellData, rowData, row, col) {
-                $(td).css('background-color', ratingColorMap(6.5, 4.5, 3.8, 3, cellData, true));
-            }
-        },
-        {
-            targets: prospectColNames.indexOf('Age'),
-            createdCell: function (td, cellData, rowData, row, col) {
-                $(td).css('background-color', ratingColorMap(0, 21, 30, 35, cellData, false));
-            }
-        },
-    ];
-
-    $(document).ready(function() {
-        let minorsTable = $('#farm-system').DataTable( {
-            data: prospectDataSet,
-            columns: prospectColumns,
-            columnDefs: prospectsColDefs,
-            pageLength: 10,
-            dom: '<l<t>p>',
-            order: [[prospectColNames.indexOf('old grade'), 'desc']],
-        } );
-
-        $('#farm-system thead tr').clone(true).appendTo('#farm-system thead');
-        $('#farm-system thead tr:eq(1) th').each(function (i) {
-            let minorsTitle = $(this).text();
-            $(this).html('<input type="text" placeholder="" />');
-
-            $('input', this).on('keyup change', function () {
-                if (minorsTable.column(i).search() !== this.value) {
-                    minorsTable.column(i).search(this.value).draw();
-                }
-            });
-        });
-    } );
-
     // other scout table
     let otherScoutColNames = {{ other_scouts_columns|safe }};
     let otherScoutDataSet = {{ other_scouts_data|safe }};
     let otherScoutIndexes = {{ other_scout_indexes|safe }};
 
     let otherScoutColumns = otherScoutColNames.map(function(item) {return {title: item}});
-    let otherScoutColDefs = [{
+    let otherScoutColDefs = [
+        {
             targets: otherScoutIndexes,
             createdCell: function (td, cellData, rowData, row, col) {
                 $(td).css('background-color', ratingColorMap(70, 55, 40, 25, cellData, true));
@@ -231,8 +340,220 @@
             }
         }];
 
+    // team prospect table
+    let minorsColNames = {{ prospects_columns|safe }};
+    let minorsDataSet = {{ prospects_data|safe }};
+
+    let minorsColumns = minorsColNames.map(function(item) {return {title: item}});
+
+    let minorsColDefs = [
+        {
+            targets: majorsColNames.indexOf('POT'),
+            createdCell: function (td, cellData, rowData, row, col) {
+                $(td).css('background-color', ratingColorMap(70, 55, 40, 25, cellData, true));
+            }
+        },
+        {
+            targets: minorsColNames.indexOf('mwar_mean'),
+            createdCell: function (td, cellData, rowData, row, col) {
+                $(td).css('background-color', ratingColorMap(6.5, 4.5, 3.8, 3, cellData, true));
+            }
+        },
+        {
+            targets: minorsColNames.indexOf('Age'),
+            createdCell: function (td, cellData, rowData, row, col) {
+                $(td).css('background-color', ratingColorMap(0, 21, 30, 35, cellData, false));
+            }
+        },
+    ];
+
+    const majorsTableTag = '#ml-roster';
+    const minorsTableTag = '#farm-system';
+    const otherScoutTableTag = '#other-scout-ratings';
+    const bioColNames = ['Lev', 'Age', 'SLR', 'YL'];
+    const batStatNames = majorsColNames.filter(e => e.includes('woba'));
+    const pitStatNames = [...majorsColNames.filter(e => e.includes('fip')), 'ip'];
+    const allStatNames = [...batStatNames, ...pitStatNames];
+    const batSplitNames = batStatNames.filter(e => e.includes('hp'));
+    const pitSplitNames = pitStatNames.filter(e => e.includes('hb'));
+    const allSplitNames = [...batSplitNames, ...pitSplitNames];
+    const batDistNames = majorsColNames.filter(e => e.includes('bat'));
+    const pitDistNames = majorsColNames.filter(e => e.includes('pit'));
+    const allDistNames = [...batDistNames, ...pitDistNames];
+
+    let majorsAgeRange;
+    let majorsAgeLabel;
+    let majorsGradeRange;
+    let majorsGradeLabel;
+    let majorsWarRange;
+    let majorsWarLabel;
+
+    let minorsAgeRange;
+    let minorsAgeLabel;
+    let minorsGradeRange;
+    let minorsGradeLabel;
+    let minorsWarRange;
+    let minorsWarLabel;
+
+    $.fn.dataTable.ext.search.push(
+        function(settings, data, dataIndex){
+            return rangeSliderFunction(majorsAgeRange, 4, settings, data, dataIndex, 16, 45);
+        },
+        function(settings, data, dataIndex){
+            return rangeSliderFunction(majorsGradeRange, 8, settings, data, dataIndex, -2, 2);
+        },
+        function(settings, data, dataIndex){
+            return rangeSliderFunction(majorsWarRange, 11, settings, data, dataIndex, -2, 2);
+        },
+        function(settings, data, dataIndex){
+            return rangeSliderFunction(minorsAgeRange, 4, settings, data, dataIndex, 16, 45);
+        },
+        function(settings, data, dataIndex){
+            return rangeSliderFunction(minorsGradeRange, 8, settings, data, dataIndex, -2, 2);
+        },
+        function(settings, data, dataIndex){
+            return rangeSliderFunction(minorsWarRange, 11, settings, data, dataIndex, -2, 2);
+        },
+    );
+
     $(document).ready(function() {
-        let scoutRatings = $('#other-scout-ratings').DataTable( {
+        const majorsTable = $(majorsTableTag).DataTable( {
+            data: majorsDataSet,
+            columns: majorsColumns,
+            columnDefs: majorsColDefs,
+            pageLength: 10,
+            dom: '<l<t>p>',
+            order: [[majorsColNames.indexOf('old grade'), 'desc']],
+        } );
+
+        // hide splits, dists by default
+        const majorsColIdx = [...allSplitNames, ...allDistNames].map((e) => {return majorsColNames.indexOf(e)});
+        majorsTable.columns(majorsColIdx).visible(false);
+
+        // draw header
+        drawHeader(majorsTable, majorsTableTag);
+
+        // change table on button click
+        toggleColumnDisplay(majorsTable, majorsTableTag, 'toggle-majors-bio', bioColNames, majorsColNames);
+        toggleColumnDisplay(majorsTable, majorsTableTag, 'toggle-majors-trad-bat', batStatNames, majorsColNames);
+        toggleColumnDisplay(majorsTable, majorsTableTag, 'toggle-majors-trad-pit', pitStatNames, majorsColNames);
+        toggleColumnDisplay(majorsTable, majorsTableTag, 'toggle-majors-trad-all', allStatNames, majorsColNames);
+        toggleColumnDisplay(majorsTable, majorsTableTag, 'toggle-majors-split-bat', batSplitNames, majorsColNames);
+        toggleColumnDisplay(majorsTable, majorsTableTag, 'toggle-majors-split-pit', pitSplitNames, majorsColNames);
+        toggleColumnDisplay(majorsTable, majorsTableTag, 'toggle-majors-split-all', allSplitNames, majorsColNames);
+        toggleColumnDisplay(majorsTable, majorsTableTag, 'toggle-majors-dist-bat', batDistNames, majorsColNames);
+        toggleColumnDisplay(majorsTable, majorsTableTag, 'toggle-majors-dist-pit', pitDistNames, majorsColNames);
+        toggleColumnDisplay(majorsTable, majorsTableTag, 'toggle-majors-dist-all', allDistNames, majorsColNames);
+
+        majorsAgeRange = $("#majors-age-range");
+        majorsAgeLabel = $("#majors-age");
+        majorsGradeRange = $("#majors-grade-range");
+        majorsGradeLabel = $("#majors-grade");
+        majorsWarRange = $("#majors-war-range");
+        majorsWarLabel = $("#majors-war");
+
+        majorsAgeRange.slider({
+            range: true,
+            min: 16,
+            max: 45,
+            values: [ 16, 45 ],
+            slide: function( event, ui ) {majorsAgeLabel.val( ui.values[ 0 ] + " - " + ui.values[ 1 ] )},
+            stop: function (event, ui) {majorsTable.draw()}
+        });
+        majorsAgeLabel.val( majorsAgeRange.slider( "values", 0 ) + " - " + majorsAgeRange.slider( "values", 1 ) );
+
+        majorsGradeRange.slider({
+            range: true,
+            min: -2,
+            max: 2,
+            step: 0.1,
+            values: [ -2, 2 ],
+            slide: function( event, ui ) {majorsGradeLabel.val(createDisplayString(ui.values));},
+            stop: function (event, ui) {majorsTable.draw()}
+        });
+        majorsGradeLabel.val(majorsGradeRange.slider( "values", 0 ) + " - +" + majorsGradeRange.slider( "values", 1 ));
+
+        majorsWarRange.slider({
+            range: true,
+            min: -2,
+            max: 2,
+            step: 0.1,
+            values: [ -2, 2 ],
+            slide: function( event, ui ) {majorsWarLabel.val( createDisplayString(ui.values) );},
+            stop: function (event, ui) {majorsTable.draw()}
+        });
+        majorsWarLabel.val(majorsWarRange.slider( "values", 0 ) + " - +" + majorsWarRange.slider( "values", 1 ) );
+
+        /* MINORS TABLE */
+        const minorsTable = $(minorsTableTag).DataTable( {
+            data: minorsDataSet,
+            columns: minorsColumns,
+            columnDefs: minorsColDefs,
+            pageLength: 10,
+            dom: '<l<t>p>',
+            order: [[minorsColNames.indexOf('old grade'), 'desc']],
+        } );
+
+        // hide splits, dists by default
+        let minorsColIdx = [...allSplitNames, ...allDistNames].map((e) => {return minorsColNames.indexOf(e)});
+        minorsTable.columns(minorsColIdx).visible(false);
+
+        // draw header
+        drawHeader(minorsTable, minorsTableTag);
+
+        // change table on button click
+        toggleColumnDisplay(minorsTable, minorsTableTag, 'toggle-minors-bio', bioColNames, minorsColNames);
+        toggleColumnDisplay(minorsTable, minorsTableTag, 'toggle-minors-trad-bat', batStatNames, minorsColNames);
+        toggleColumnDisplay(minorsTable, minorsTableTag, 'toggle-minors-trad-pit', pitStatNames, minorsColNames);
+        toggleColumnDisplay(minorsTable, minorsTableTag, 'toggle-minors-trad-all', allStatNames, minorsColNames);
+        toggleColumnDisplay(minorsTable, minorsTableTag, 'toggle-minors-split-bat', batSplitNames, minorsColNames);
+        toggleColumnDisplay(minorsTable, minorsTableTag, 'toggle-minors-split-pit', pitSplitNames, minorsColNames);
+        toggleColumnDisplay(minorsTable, minorsTableTag, 'toggle-minors-split-all', allSplitNames, minorsColNames);
+        toggleColumnDisplay(minorsTable, minorsTableTag, 'toggle-minors-dist-bat', batDistNames, minorsColNames);
+        toggleColumnDisplay(minorsTable, minorsTableTag, 'toggle-minors-dist-pit', pitDistNames, minorsColNames);
+        toggleColumnDisplay(minorsTable, minorsTableTag, 'toggle-minors-dist-all', allDistNames, minorsColNames);
+
+        minorsAgeRange = $("#minors-age-range");
+        minorsAgeLabel = $("#minors-age");
+        minorsGradeRange = $("#minors-grade-range");
+        minorsGradeLabel = $("#minors-grade");
+        minorsWarRange = $("#minors-war-range");
+        minorsWarLabel = $("#minors-war");
+
+        minorsAgeRange.slider({
+            range: true,
+            min: 16,
+            max: 45,
+            values: [ 16, 45 ],
+            slide: function( event, ui ) {minorsAgeLabel.val( ui.values[ 0 ] + " - " + ui.values[ 1 ] )},
+            stop: function (event, ui) {minorsTable.draw()}
+        });
+        minorsAgeLabel.val( minorsAgeRange.slider( "values", 0 ) + " - " + minorsAgeRange.slider( "values", 1 ) );
+
+        minorsGradeRange.slider({
+            range: true,
+            min: -2,
+            max: 2,
+            step: 0.1,
+            values: [ -2, 2 ],
+            slide: function( event, ui ) {minorsGradeLabel.val(createDisplayString(ui.values));},
+            stop: function (event, ui) {minorsTable.draw()}
+        });
+        minorsGradeLabel.val(minorsGradeRange.slider( "values", 0 ) + " - +" + minorsGradeRange.slider( "values", 1 ));
+
+        minorsWarRange.slider({
+            range: true,
+            min: -2,
+            max: 2,
+            step: 0.1,
+            values: [ -2, 2 ],
+            slide: function( event, ui ) {minorsWarLabel.val( createDisplayString(ui.values) );},
+            stop: function (event, ui) {minorsTable.draw()}
+        });
+        minorsWarLabel.val(minorsWarRange.slider( "values", 0 ) + " - +" + minorsWarRange.slider( "values", 1 ) );
+
+        /* Other scout table */
+        const scoutRatings = $('#other-scout-ratings').DataTable( {
             data: otherScoutDataSet,
             columns: otherScoutColumns,
             columnDefs: otherScoutColDefs,
@@ -241,54 +562,7 @@
             order: [[otherScoutColNames.indexOf('old grade'), 'desc']],
         } );
 
-        let filterOption = 'EQ';
+        drawHeader(scoutRatings, otherScoutTableTag);
+    });
 
-        let drawHeader = () => {
-            $('#other-scout-ratings thead tr').clone(true).appendTo('#other-scout-ratings thead');
-            $('#other-scout-ratings thead tr:eq(1) th').each(function (i) {
-                if (i === 0) {
-                    //$(this).html('' +
-                    //    '<div class="dropdown">\n' +
-                    //    '  <button class="dropbtn">Filter Options</button>\n' +
-                    //    '  <div class="dropdown-content">\n' +
-                    //    '    <li id="other-dropdown-eq"> = </li>\n' +
-                    //    '    <li id="other-dropdown-gte"> > </li>\n' +
-                    //    '    <li id="other-dropdown-lte"> < </li>\n' +
-                    //    '  </div>\n' +
-                    //    '</div>'
-                    //);
-
-                    return;
-                }
-
-                let otherScoutTitle = $(this).text();
-                $(this).html('<input type="text" />');
-
-                $('input', this).on('keyup change', function () {
-                    const searchValue = this.value;
-
-                    if (filterOption === 'EQ') {
-                        if (scoutRatings.column(i).search() !== this.value) {
-                            scoutRatings.column(i).search(this.value).draw();
-                        }
-                    }
-
-                    if (filterOption === 'GTE') {
-                        scoutRatings.column(i).filter(function (column, idx) {
-                            return parseFloat(column) >= parseFloat(searchValue)
-                        }).draw();
-                    }
-
-                    if (filterOption === 'LTE') {
-                        if (scoutRatings.column(i).search() <= this.value) {
-                            scoutRatings.column(i).search(this.value).draw();
-                        }
-                    }
-                });
-            });
-        };
-
-        drawHeader();
-
-    } );
 </script>

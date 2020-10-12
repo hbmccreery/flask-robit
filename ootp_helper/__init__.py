@@ -11,12 +11,12 @@ from ootp_helper.player.table_generators import *
 from ootp_helper.position.position_utils import create_position_tables
 from ootp_helper.color_maps import *
 from ootp_helper.utils import clean_tables, create_table_json, get_front_page_data, init_db, generate_error_message
-from ootp_helper.team.team_utils import add_splits_data, generate_lineup_card
+from ootp_helper.team.team_utils import add_splits_data, generate_lineup_card, generate_team_header
 
 (batting_benchmarks, pitching_benchmarks) = create_benchmarks()
 
 # stop rounding my buttons
-pd.set_option('display.max_colwidth', -1)
+pd.set_option('display.max_colwidth', None)
 
 # database connection
 db = init_db()
@@ -54,7 +54,6 @@ def landing_page():
 @app.route('/compare/<helper1>', methods=['POST'])
 @app.route('/compare/<helper1>/<helper2>', methods=['POST'])
 def landing_page_team_request(team=None, pos=None, player=None, helper1=None, helper2=None, year=None):
-    
     if 'player' in request.form.keys():
         # grab text, get table of players w/ that name
         text = request.form['player']
@@ -260,13 +259,14 @@ def team(team: str):
         majors_df = pd.DataFrame.from_records(majors_records).rename({'_id': 'HELPER'}, axis=1).fillna(0)
 
     minors_df = pd.DataFrame.from_records(minors_records).rename({'_id': 'HELPER'}, axis=1).fillna(0)
-    prosects_columns, prospects_data = create_table_json(minors_df)
+    prosects_columns, prospects_data = create_table_json(minors_df, db)
 
     if team not in ['DRAFT', 'FA']:
-        majors_columns, majors_data = create_table_json(majors_df)
+        majors_columns, majors_data = create_table_json(majors_df, db)
         total_df = pd.concat([minors_df, majors_df], ignore_index=True)
 
         pitching_table, batting_table = generate_lineup_card(majors_df)
+        header_info = generate_team_header(team, db)
 
         header_str_dead = '${:,.0f} in dead money - <br> {}'
 
@@ -290,7 +290,7 @@ def team(team: str):
         else:
             dead_names = ''
 
-        header_dead_money = header_str_dead.format(dead_amt, dead_names)
+        header_dead_money = header_info + "<br><br>" + header_str_dead.format(dead_amt, dead_names)
 
     else:
         total_df = minors_df
@@ -407,33 +407,6 @@ def player(helper):
     statsplus_record = db[constants.DB_STATSPLUS_TABLE].find_one({'_id': helper})
     war_dist_data = db[constants.DB_DISTRIBUTIONS_TABLE].find_one({'_id': helper})
 
-    subset = pd.DataFrame.from_records(player_records)[PLAYER_SUBSET]
-    subset.insert(loc=5, column='og80', value=(subset['mwar_mean'] * 0.8 + subset['POT'] / 50))
-
-    round_three = ['woba', 'woba_mean']
-    round_two = ['og80', 'fip', 'fip_mean']
-    round_one = ['old grade', 'POT', 'bwar', 'bwar_mean', 'ip', 'pwar', 'pwar_mean']
-
-    subset[round_three] = subset[round_three].round(3)
-    subset[round_two] = subset[round_two].round(2)
-    subset[round_one] = subset[round_one].round(1)
-
-    # getting unique index errors b/c players will occasionally fall in the same spot
-    subset = subset.reset_index().drop(columns='index')
-    subset_drop_cols = ['mwar_mean', 'mwar-1', 'og-1', 'pwoba-1', 'pfip-1']
-
-    table = subset.drop(subset_drop_cols, axis=1).style.applymap(
-        background_rating_colors,
-        subset=['POT']
-    ).applymap(
-        highlight_mwar,
-        subset=['bwar', 'bwar_mean', 'pwar', 'pwar_mean']
-    ).set_properties(
-        **(dict(**TABLE_PROPERTIES, **{'font-size': '1.5em'}))
-    ).set_table_styles(
-        [{'selector': 'th', 'props': [('font-size', '1.5em')]}]
-    ).hide_index().render()
-
     # get the numbers to build tables with
     current_record = db[months[0]].find_one({'_id': helper})
     current_df = pd.DataFrame.from_records([current_record])
@@ -456,17 +429,17 @@ def player(helper):
     ind_pit_rats = generate_ind_pitch_table(pitch_ratings)
 
     name = generate_player_name(player_records[0], pos_str, statsplus_record)
-    rating_header = generate_ratings_header(subset, bat_splits, pit_splits, war_dist_data)
+    rating_header = generate_ratings_header(player_records[:4], bat_splits, pit_splits, war_dist_data)
     bio = generate_player_header(player_records[0])
-    sp_info = generate_statsplus_info(statsplus_record, db) if statsplus_record else (None, None, None, None, None)
+    # sp_info = generate_statsplus_info(statsplus_record, db) if statsplus_record else (None, None, None, None, None)
 
-    (statsplus_info, inj, trans, pit_stats, hit_stats) = sp_info
+    # (statsplus_info, inj, trans, pit_stats, hit_stats) = sp_info
+    (statsplus_info, inj, trans, pit_stats, hit_stats) = (None, None, None, [[], []], [[], []])
 
-    # and a little text snippet of recent ratings changes
+    # and a text snippet of recent ratings changes
     changes = []
 
     for i in range(len(months)-1):
-
         if i + 1 >= len(player_records):
             break
 
@@ -490,21 +463,16 @@ def player(helper):
 
     total_change_str = '<br/>'.join(changes)
 
-    # put the player subset -> json to use in d3
-    # keep index as x-axis
-    subset = subset.reset_index()
-    
-    subset['mwar'] = subset[['bwar', 'pwar']].apply(np.max, axis=1)
-    columns_used = ['index', 'Month', 'old grade', 'woba', 'woba_mean', 'fip', 'fip_mean', 'mwar_mean', 'mwar']
-    subset = subset[columns_used].to_json(orient='records')
-
+    player_records = [format_player_record(idx, item) for idx, item in enumerate(player_records)]
+   
     bat_levels = batting_benchmarks[[best_pos, 'lev']].rename({best_pos: 'pos'}, axis=1)
     bat_levels = bat_levels.to_json(orient='records')
 
     pit_levels = pitching_benchmarks[['SP', 'lev']].to_json(orient='records')
 
-    other_teams = [record for record in db['scout_takes'].find({'_id': helper})]
-    other_teams = pd.DataFrame.from_records(other_teams)
+    other_teams = db['scout_takes'].find_one({'_id': helper})
+    other_teams['POT'] = int(other_teams['POT'])
+    other_teams = pd.DataFrame.from_records([other_teams])
 
     other_team_table = other_teams.drop(['_id', 'TM', 'Name'], axis=1).style.applymap(
         background_rating_colors,
@@ -524,7 +492,6 @@ def player(helper):
         name=name,
         rating_header=rating_header,
         bio=bio,
-        table=table,
         def_rats=def_rats,
         def_stats=def_stats,
         bat_rats=bat_rats,
@@ -533,7 +500,6 @@ def player(helper):
         ind_pit_rats=ind_pit_rats,
         bat_splits=json.dumps(bat_splits),
         pit_splits=json.dumps(pit_splits),
-        subset=subset,
         bat_levs=bat_levels,
         pit_levs=pit_levels,
         other_team_table=other_team_table,
@@ -546,6 +512,7 @@ def player(helper):
         pit_stats=pit_stats,
         hit_stats=hit_stats,
         phrase=random.choice(PHRASES),
+        player_records=player_records,
     )
 
 

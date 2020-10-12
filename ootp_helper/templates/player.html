@@ -1,11 +1,12 @@
 <!doctype html>
 <head>
-  <link rel= "stylesheet" type= "text/css" href= "../static/styles/style.css">
-  <title> Player Development </title>
-  <script type="text/javascript" src="../static/d3.min.js"></script>
+    <link rel= "stylesheet" type= "text/css" href= "../static/styles/style.css">
+    <title> Player Development </title>
+    <script type="text/javascript" src="../static/d3.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css"/>
     <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
     <script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
+    <script src="../static/utils.js"></script>
 </head>
   <body>
   <h1> <a href = "../"><img src="../static/bender.png", width="5%"> OOTP Robit</a></h1>
@@ -43,13 +44,6 @@
     <h2> Under construction! </h2>
     {% endif %}
 
-<!--     {% if stats %}
-    <p style="font-size:150%;color:#AAAAAA"> {{stats|safe}} <p>
-    {% else %}
-    <h2> Under construction! </h2>
-    {% endif %}
- -->
-
     <div class="row" id="dist">
         <div class="column" id="war_dist">
             <!-- d3 code will be inserted here -->
@@ -65,25 +59,23 @@
 
     <div class='row' id='other_teams'>
       {% if other_team_table %}
-      {{other_team_table|safe}}
+        {{other_team_table|safe}}
       {% endif %}
     </div>
 
     <hr/>
 
-    <div class="row">
-      <div class="column">
-        {% if table %}
-          <h1> Past Information </h1>
-          <br>
-          {{table|safe }}
-        {% else %}
-          <p> Error - no table </p>
-        {% endif %}
-      </div>
+    <div class="column">
+        <div class="row">
+            <h1> Past Information </h1>
+        </div>
+        <hr/>
+        <table id="past-ratings" class="display" style="width: auto; margin-left: 0px;"></table>
     </div>
+
     <hr/>
-      <div class="row">
+
+    <div class="row">
       <div class="column">
         <div>
           {% if total_change_str %}
@@ -320,7 +312,7 @@
 </script>
 
 <script type="text/javascript">
-  var subset_json = JSON.parse({{subset|tojson}});
+  var subset_json = {{player_records|tojson}};
   var month_labs = {{months|tojson}}['months'];
   var bat_benchmarks = JSON.parse({{bat_levs|tojson}});
   var pit_benchmarks = JSON.parse({{pit_levs|tojson}});
@@ -564,7 +556,7 @@
      .attr('d', war_line)
      .attr('fill', 'none')
      .attr("stroke", color_main)
-     .attr("stroke-width", 0.5 * it_sz)
+     .attr("stroke-width", 0.5 * it_sz);
 
   svg4.append('path')
      .datum(subset_json)
@@ -653,11 +645,65 @@
     var transactionData = {{ transaction_data | tojson }};
     var pitchStatData = {{ pit_stats | tojson }};
     var hitStatData = {{ hit_stats | tojson }};
+    var ratingsData = {{ player_records | tojson }};
 
     var majorsPitchStatData = pitchStatData[0];
     var minorsPitchStatData = pitchStatData[1];
     var majorsHitStatData = hitStatData[0];
     var minorsHitStatData = hitStatData[1];
+
+    var roundThreeIdx = [7, 8];
+    var roundTwoIdx = [12, 13];
+    var roundOneIdx = [5, 6, 9, 10, 11, 14, 15];
+
+    const ratingsColumns = [
+        {className: 'details-control', orderable: false, data: null, defaultContent: ''},
+        {title: 'Month', data: 'Month'},
+        {title: 'POS', data: 'POS'},
+        {title: 'Lev', data: 'Lev'},
+        {title: 'Age', data: 'Age'},
+        {title: 'old grade', data: 'old grade'},
+        {title: 'POT', data: 'POT'},
+        {title: 'wOBA', data: 'woba'},
+        {title: 'pwOBA', data: 'woba_mean'},
+        {title: 'bWAR', data: 'bwar'},
+        {title: 'pbWAR', data: 'bwar_mean'},
+        {title: 'IP', data: 'ip'},
+        {title: 'FIP', data: 'fip'},
+        {title: 'pFIP', data: 'fip_mean'},
+        {title: 'pWAR', data: 'pwar'},
+        {title: 'ppWAR', data: 'pwar_mean'},
+    ];
+
+    const ratingColumnDefs = [
+        {
+            targets: roundThreeIdx,
+            render: function ( data, type, row ) {return data.toFixed(3)},
+            className: 'dt-body-right'
+        },
+        {
+            targets: roundTwoIdx,
+            render: function ( data, type, row ) {return data.toFixed(2)},
+            className: 'dt-body-right'
+        },
+        {
+            targets: roundOneIdx,
+            render: function ( data, type, row ) {return data.toFixed(1)},
+            className: 'dt-body-right'
+        },
+        {
+            targets: [9, 10, 14, 15],  // WAR columns
+            createdCell: function (td, cellData, rowData, row, col) {
+                $(td).css('background-color', ratingColorMap(6.5, 4.5, 3.8, 3, cellData, true));
+            }
+        },
+        {
+            targets: 6,  // POT
+            createdCell: function (td, cellData, rowData, row, col) {
+                $(td).css('background-color', ratingColorMap(70, 55, 40, 25, cellData, true));
+            }
+        },
+    ];
 
     const injuryColumns = [
         {className: 'details-control', orderable: false, data: null, defaultContent: ''},
@@ -711,6 +757,15 @@
     }
 
     $(document).ready(function() {
+        const ratingsTable = $('#past-ratings').DataTable( {
+            data: ratingsData,
+            columns: ratingsColumns,
+            columnDefs: ratingColumnDefs,
+            pageLength: -1,
+            dom: '<<t>>',
+        } );
+
+
         const injuriesTable = $('#injuries').DataTable( {
             data: injuryData,
             columns: injuryColumns,
@@ -766,6 +821,22 @@
         }
 
         // Add event listener for opening and closing details
+        $('#past-ratings tbody').on('click', 'td.details-control', function () {
+            var tr = $(this).closest('tr');
+            var row = ratingsTable.row( tr );
+
+            if ( row.child.isShown() ) {
+                // This row is already open - close it
+                row.child.hide();
+                tr.removeClass('shown');
+            }
+            else {
+                // Open this row
+                row.child( formatDetail(row.data()) ).show();
+                tr.addClass('shown');
+            }
+        } );
+
         $('#transactions tbody').on('click', 'td.details-control', function () {
             var tr = $(this).closest('tr');
             var row = transactionsTable.row( tr );
