@@ -11,6 +11,7 @@ from ootp_helper.constants import CLEAN_TABLES_COLS, POT_COLS, BUTTON_STRING, TA
     DB_CONNECTION_STRING, DB_NAME_STRING, PHRASES
 from ootp_helper.color_maps import background_rating_colors, highlight_woba, highlight_fip, highlight_mwar, highlight_og_change, \
     highlight_mwar_change
+from ootp_helper.player.header_text import generate_war_probabilities_styled
 
 
 def clean_tables(subset, table_name, include_team=False, team_pot=''):
@@ -83,7 +84,15 @@ def create_aggregated_dist_data(record: dict) -> dict:
 def create_table_json(subset, db, include_team=False) -> Tuple[List, List[List]]:
     insert_cols = CLEAN_TABLES_COLS[:1] + ['TM', 'rank'] + CLEAN_TABLES_COLS[1:] if include_team else CLEAN_TABLES_COLS
 
-    dist_data = [create_aggregated_dist_data(x) for x in db['dist_data'].find({'_id': {'$in': list(subset['HELPER'])}})]
+    dist_data = [x for x in db['dist_data'].find({'_id': {'$in': list(subset['HELPER'])}})]
+
+    dist_data = [
+        {
+            **create_aggregated_dist_data(x),
+            'detail': generate_war_probabilities_styled(x)
+        } for x
+        in dist_data
+    ]
 
     subset = subset[insert_cols]
     subset = pd.merge(subset, pd.DataFrame(dist_data), how='left')
@@ -100,7 +109,7 @@ def create_table_json(subset, db, include_team=False) -> Tuple[List, List[List]]
 
     subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
 
-    return_cols = ['' if col == 'HELPER' else col for col in subset.columns]
+    return_cols = ['' if col == 'HELPER' else col for col in subset.columns if col != 'detail']
     return_data = subset.values.tolist()
 
     return return_cols, return_data

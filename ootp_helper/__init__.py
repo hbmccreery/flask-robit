@@ -431,10 +431,10 @@ def player(helper):
     name = generate_player_name(player_records[0], pos_str, statsplus_record)
     rating_header = generate_ratings_header(player_records[:4], bat_splits, pit_splits, war_dist_data)
     bio = generate_player_header(player_records[0])
-    # sp_info = generate_statsplus_info(statsplus_record, db) if statsplus_record else (None, None, None, None, None)
+    sp_info = generate_statsplus_info(statsplus_record, db) if statsplus_record else (None, None, None, None, None)
 
-    # (statsplus_info, inj, trans, pit_stats, hit_stats) = sp_info
-    (statsplus_info, inj, trans, pit_stats, hit_stats) = (None, None, None, [[], []], [[], []])
+    (statsplus_info, inj, trans, pit_stats, hit_stats) = sp_info
+    # (statsplus_info, inj, trans, pit_stats, hit_stats) = (None, None, None, [[], []], [[], []])
 
     # and a text snippet of recent ratings changes
     changes = []

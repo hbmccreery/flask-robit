@@ -265,7 +265,7 @@
         return ((vals[0] > 0 ? '+' + vals[0] : vals[0]) + " - " + (vals[1] > 0 ? '+' + vals[1] : vals[1]))
     };
 
-    const rangeSliderFunction = ( sliderVar, colIdx, settings, data, dataIndex, absMax, absMin ) => {
+    const rangeSliderFunction = ( sliderVar, colIdx, settings, data, dataIndex, absMin, absMax ) => {
         if(sliderVar === undefined || settings.nTable.id === 'other-scout-ratings'){
             return true;
         }
