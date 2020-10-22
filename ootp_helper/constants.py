@@ -118,7 +118,7 @@ PHRASES = [
     'Do you want to know the terrifying truth, or do you want to see the Reds sock a few dingers?'
 ]
 
-months = ['aug30', 'jun30', 'mar30', 'jan30', 'dec29', 'nov29', 'oct29', 'aug29', 'jun29', 'apr29', 'mar29', 'feb29', 'jan29']
+months = ['oct30', 'aug30', 'jun30', 'mar30', 'jan30', 'dec29', 'nov29', 'oct29', 'aug29', 'jun29', 'apr29', 'mar29']
 currMonth = months[0]
 reversed_months = [i for i in reversed(months)] 
 
