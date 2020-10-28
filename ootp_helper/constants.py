@@ -32,8 +32,9 @@ FRONT_PAGE_COLS = ['_id'] + PLAYER_DISP[1:] + ['POT', 'old grade', 'og-1', 'mwar
 POT_COLS = ['CON P', 'GAP P', 'POW P', 'EYE P', 'K P', 'STU P', 'MOV P', 'CTL P']
 
 CLEAN_TABLES_COLS = [
-    'HELPER', 'POS', 'Name', 'Lev', 'Age', 'SLR', 'YL', 'old grade', 'og-1', 'POT', 'mwar_mean', 'mwar-1',
-    'woba', 'woba_rhp', 'woba_lhp', 'woba_mean', 'ip', 'fip', 'fip_rhb', 'fip_lhb', 'fip_mean'
+    'HELPER', 'POS', 'Name', 'Lev', 'Age', 'SLR', 'YL', 'new_grade', 'old grade', 'og-1', 'POT', 'mwar_mean', 'mwar-1',
+    'pred_years_remaining', 'weighted_war', 'woba', 'woba_rhp', 'woba_lhp', 'woba_mean', 'ip', 'fip', 'fip_rhb',
+    'fip_lhb', 'fip_mean'
 ]
 
 PLAYER_SUBSET = ['Month', 'POS', 'Lev', 'Age', 'old grade', 'og-1', 'POT', 'mwar_mean', 'mwar-1', 'woba', 'bwar',
