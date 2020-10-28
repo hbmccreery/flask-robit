@@ -109,6 +109,8 @@ def create_table_json(subset, db, include_team=False) -> Tuple[List, List[List]]
 
     subset['HELPER'] = subset['HELPER'].apply(lambda x: BUTTON_STRING.format(x.replace("'", "%27")))
 
+    subset.rename({'pred_years_remaining': 'years_left'}, axis=1, inplace=True)
+
     return_cols = ['' if col == 'HELPER' else col for col in subset.columns if col != 'detail']
     return_data = subset.values.tolist()
 
