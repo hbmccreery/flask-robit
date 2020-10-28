@@ -32,8 +32,8 @@ FRONT_PAGE_COLS = ['_id'] + PLAYER_DISP[1:] + ['POT', 'old grade', 'og-1', 'mwar
 POT_COLS = ['CON P', 'GAP P', 'POW P', 'EYE P', 'K P', 'STU P', 'MOV P', 'CTL P']
 
 CLEAN_TABLES_COLS = [
-    'HELPER', 'POS', 'Name', 'Lev', 'Age', 'SLR', 'YL', 'old grade', 'og-1', 'POT', 'mwar_mean', 'mwar-1', 'woba',
-    'woba_rhp', 'woba_lhp', 'woba_mean', 'ip', 'fip', 'fip_rhb', 'fip_lhb', 'fip_mean'
+    'HELPER', 'POS', 'Name', 'Lev', 'Age', 'SLR', 'YL', 'old grade', 'og-1', 'POT', 'mwar_mean', 'mwar-1',
+    'woba', 'woba_rhp', 'woba_lhp', 'woba_mean', 'ip', 'fip', 'fip_rhb', 'fip_lhb', 'fip_mean'
 ]
 
 PLAYER_SUBSET = ['Month', 'POS', 'Lev', 'Age', 'old grade', 'og-1', 'POT', 'mwar_mean', 'mwar-1', 'woba', 'bwar',
@@ -118,7 +118,7 @@ PHRASES = [
     'Do you want to know the terrifying truth, or do you want to see the Reds sock a few dingers?'
 ]
 
-months = ['oct30', 'aug30', 'jun30', 'mar30', 'jan30', 'dec29', 'nov29', 'oct29', 'aug29', 'jun29', 'apr29', 'mar29']
+months = ['nov30', 'oct30', 'aug30', 'jun30', 'mar30', 'jan30', 'dec29', 'nov29', 'oct29']
 currMonth = months[0]
 reversed_months = [i for i in reversed(months)] 
 
