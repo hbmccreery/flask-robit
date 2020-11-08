@@ -342,15 +342,20 @@ def generate_statsplus_info(statsplus: dict, db) -> Tuple[str, list, list, tuple
     hitting_data = build_statsplus_data(soup, 'player-bat-table', format_hitting_row)
 
     team = soup.find('div', {'class': 'playertopright'}).find('a')
-    team_name = team.text
-    team_id = team['href'].replace('/oblootp/team/', '')
-    team_info = db[DB_STATSPLUS_TABLE].find_one({'team_id': int(team_id)})
 
-    team_string = '<h3>Statsplus - Org: {org} | Lev: {lev} | Team: {tm}</h3>'.format(
-        org=team_info['TM'],
-        lev=team_info['Lev'],
-        tm=team_name
-    )
+    if team is not None:
+        team_name = team.text
+        team_id = team['href'].replace('/oblootp/team/', '')
+        team_info = db[DB_STATSPLUS_TABLE].find_one({'team_id': int(team_id)})
+
+        team_string = '<h3>Statsplus - Org: {org} | Lev: {lev} | Team: {tm}</h3>'.format(
+            org=team_info['TM'],
+            lev=team_info['Lev'],
+            tm=team_name
+        )
+
+    else:
+        team_string = ''
 
     transaction_info_db = db[DB_TRANSACTIONS_TABLE].find({'player': statsplus['statsplus_id']}, {'_id': 0})
     transaction_records = [item for item in transaction_info_db]
