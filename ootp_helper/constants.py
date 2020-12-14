@@ -163,9 +163,10 @@ BUTTON_STRING = '<input type="button" value="Player Page" onclick="window.locati
 COMPARISON_SEARCH_STRING = '<input type="button" value="Player Page" onclick="window.location.href=\'/compare/{}\'" />'
 COMPARISON_PAGE_STRING = '<input type="button" value="Player Page" onclick="window.location.href=\'/compare/{0}/{1}\'" />'
 
-DB_USER = 'read_connection'
-DB_PASS = 'password123'
-DB_CONNECTION_STRING = f'mongodb://{DB_USER}:{DB_PASS}@ds253368.mlab.com:53368/flask_robit?retryWrites=false'
+DB_USER = 'read_user'
+DB_PASS = 'read_pass'
+
+DB_CONNECTION_STRING = f'mongodb+srv://{DB_USER}:{DB_PASS}@flask-robit.1bixk.mongodb.net/flask_robit?retryWrites=false&w=majority'
 DB_NAME_STRING = 'flask_robit'
 DB_STATSPLUS_TABLE = 'statsplus'
 DB_DISTRIBUTIONS_TABLE = 'dist_data'
