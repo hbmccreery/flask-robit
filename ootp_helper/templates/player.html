@@ -647,10 +647,21 @@
     var hitStatData = {{ hit_stats | tojson }};
     var ratingsData = {{ player_records | tojson }};
 
-    var majorsPitchStatData = pitchStatData[0];
-    var minorsPitchStatData = pitchStatData[1];
-    var majorsHitStatData = hitStatData[0];
-    var minorsHitStatData = hitStatData[1];
+    var majorsPitchStatData = [];
+    var minorsPitchStatData = [];
+    var majorsHitStatData = [];
+    var minorsHitStatData = [];
+
+    if (pitchStatData !== null) {
+        majorsPitchStatData = pitchStatData[0];
+        minorsPitchStatData = pitchStatData[1];
+    }
+
+    if (hitStatData !== null){
+        majorsHitStatData = hitStatData[0];
+        minorsHitStatData = hitStatData[1];
+    }
+
 
     var roundThreeIdx = [7, 8];
     var roundTwoIdx = [12, 13];
