@@ -105,7 +105,7 @@ def generate_player_header(player: dict) -> str:
 
     line_one = '<b> Age: </b> {0} | <b> Inj: </b> {1} | <b> Personality: </b> {2}'.format(
         player['Age'],
-        format_injury_string(player['INJ'].strip()),
+        format_injury_string(player['Prone'].strip()),
         format_personality_string(player['Type'].strip()),
     )
 
@@ -120,9 +120,9 @@ def generate_player_header(player: dict) -> str:
         line_three = line_three + ' | <b> Extension: </b> {0}/{1}'.format(player['ECV'], player['ETY'])
 
     line_four = '<b> ML Yr: </b> {0} | <b> Pro Yr: </b> {1} | <b> Options: </b> {2}'.format(
-        player['MLY'],
+        -1, # player['MLY'],
         player['PROY'],
-        player['OPTU']
+        player['OPT']
     )
 
     return '<br/>'.join([line_zero, line_one, line_two, line_three, line_four])
