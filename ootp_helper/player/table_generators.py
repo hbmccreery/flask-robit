@@ -3,6 +3,8 @@ from typing import Tuple, List, Any
 import pandas as pd
 import json
 
+from datetime import datetime
+
 from ootp_helper.player.run_calculators import runs_to_ratings, ratings_to_runs
 from ootp_helper.color_maps import defense_stat_colors, rating_colors
 from ootp_helper.constants import DEF_RAT_COLUMNS, TABLE_PROPERTIES, IND_PIT_COLUMNS, IND_PIT_POT_COLUMNS
@@ -83,6 +85,13 @@ def format_player_record(idx: int, record: dict) -> dict:
     record['detail'] = f'<table><tbody style="vertical-align: top;"><tr>{"".join(table_list)}</tr></tbody></table>'
 
     return record
+
+
+def format_report_record(idx: int, record: dict) -> dict:
+    record.pop('_id')
+    record['Sct'] = record['Sct'].strftime('%m-%d-%y')
+
+    return format_player_record(idx, record)
 
 
 def generate_defensive_ratings_string(listed_pos: str, rendered_ratings: List[dict]) -> str:

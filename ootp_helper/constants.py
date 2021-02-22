@@ -172,6 +172,7 @@ DB_STATSPLUS_TABLE = 'statsplus'
 DB_DISTRIBUTIONS_TABLE = 'dist_data'
 DB_TRANSACTIONS_TABLE = 'transactions'
 DB_TEAM_STATSPLUS_TABLE = 'statsplus_team'
+DB_REPORTS_TABLE = 'total_scout_records'
 
 STATSPLUS_PLAYER_FORMAT = 'https://statsplus.net/oblootp/player/{id}?page={page}'
 

@@ -406,6 +406,11 @@ def player(helper):
 
     statsplus_record = db[constants.DB_STATSPLUS_TABLE].find_one({'_id': helper})
     war_dist_data = db[constants.DB_DISTRIBUTIONS_TABLE].find_one({'_id': helper})
+    all_reports = [
+        format_report_record(idx, report)
+        for idx, report
+        in enumerate(db[constants.DB_REPORTS_TABLE].find({'HELPER': helper}).sort('Sct'))
+    ]
 
     # get the numbers to build tables with
     current_record = db[months[0]].find_one({'_id': helper})
@@ -434,7 +439,6 @@ def player(helper):
     sp_info = generate_statsplus_info(statsplus_record, db) if statsplus_record else (None, None, None, None, None)
 
     (statsplus_info, inj, trans, pit_stats, hit_stats) = sp_info
-    # (statsplus_info, inj, trans, pit_stats, hit_stats) = (None, None, None, [[], []], [[], []])
 
     # and a text snippet of recent ratings changes
     changes = []
@@ -472,20 +476,6 @@ def player(helper):
 
     other_teams = db['scout_takes'].find_one({'_id': helper})
     other_teams['POT'] = int(other_teams['POT'])
-    # other_teams = pd.DataFrame.from_records([other_teams])
-    #
-    # other_team_table = other_teams.drop(['_id', 'TM', 'Name'], axis=1).style.applymap(
-    #     background_rating_colors,
-    # ).set_properties(
-    #     **{
-    #         'text-align': 'left',
-    #         'padding': '15px',
-    #         'margin-bottom': '40px',
-    #         'font-size': '1.4em'
-    #     }
-    # ).set_table_styles(
-    #     [{'selector': 'th', 'props': [('font-size', '1.2em')]}]
-    # ).hide_index().render()
 
     other_team_table = build_report_string(other_teams)
 
@@ -515,6 +505,7 @@ def player(helper):
         hit_stats=hit_stats,
         phrase=random.choice(PHRASES),
         player_records=player_records,
+        indiviual_reports=all_reports,
     )
 
 

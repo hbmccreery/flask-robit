@@ -75,6 +75,16 @@
 
     <hr/>
 
+    <div class="column">
+        <div class="row">
+            <h1> Past Reports </h1>
+        </div>
+        <hr/>
+        <table id="past-reports" class="display" style="width: auto; margin-left: 0px;"></table>
+    </div>
+
+    <hr/>
+
     <div class="row">
       <div class="column">
         <div>
@@ -646,6 +656,7 @@
     var pitchStatData = {{ pit_stats | tojson }};
     var hitStatData = {{ hit_stats | tojson }};
     var ratingsData = {{ player_records | tojson }};
+    var reportData = {{ indiviual_reports | tojson }};
 
     var majorsPitchStatData = [];
     var minorsPitchStatData = [];
@@ -686,6 +697,27 @@
         {title: 'ppWAR', data: 'pwar_mean'},
     ];
 
+    const reportsColumns = [
+        {className: 'details-control', orderable: false, data: null, defaultContent: ''},
+        {title: 'Date', data: 'Sct'},
+        {title: 'Scout', data: 'scout'},
+        {title: 'Acc', data: 'SctAcc'},
+        {title: 'POS', data: 'POS'},
+        {title: 'Lev', data: 'Lev'},
+        {title: 'Age', data: 'Age'},
+        {title: 'old grade', data: 'old grade'},
+        {title: 'POT', data: 'POT'},
+        {title: 'wOBA', data: 'woba'},
+        {title: 'pwOBA', data: 'woba_mean'},
+        {title: 'bWAR', data: 'bwar'},
+        {title: 'pbWAR', data: 'bwar_mean'},
+        {title: 'IP', data: 'ip'},
+        {title: 'FIP', data: 'fip'},
+        {title: 'pFIP', data: 'fip_mean'},
+        {title: 'pWAR', data: 'pwar'},
+        {title: 'ppWAR', data: 'pwar_mean'},
+    ];
+
     const ratingColumnDefs = [
         {
             targets: roundThreeIdx,
@@ -710,6 +742,36 @@
         },
         {
             targets: 6,  // POT
+            createdCell: function (td, cellData, rowData, row, col) {
+                $(td).css('background-color', ratingColorMap(70, 55, 40, 25, cellData, true));
+            }
+        },
+    ];
+
+    const reportsColumnDefs = [
+        {
+            targets: [9, 10],
+            render: function ( data, type, row ) {return data.toFixed(3)},
+            className: 'dt-body-right'
+        },
+        {
+            targets: [14, 15],
+            render: function ( data, type, row ) {return data.toFixed(2)},
+            className: 'dt-body-right'
+        },
+        {
+            targets: [7, 11, 12, 13, 16, 17],
+            render: function ( data, type, row ) {return data.toFixed(1)},
+            className: 'dt-body-right'
+        },
+        {
+            targets: [11, 12, 16, 17],  // WAR columns
+            createdCell: function (td, cellData, rowData, row, col) {
+                $(td).css('background-color', ratingColorMap(6.5, 4.5, 3.8, 3, cellData, true));
+            }
+        },
+        {
+            targets: 8,  // POT
             createdCell: function (td, cellData, rowData, row, col) {
                 $(td).css('background-color', ratingColorMap(70, 55, 40, 25, cellData, true));
             }
@@ -776,6 +838,14 @@
             dom: '<<t>>',
         } );
 
+        const reportsTable = $('#past-reports').DataTable( {
+            data: reportData,
+            columns: reportsColumns,
+            columnDefs: reportsColumnDefs,
+            pageLength: 5,
+            dom: '<<t>>',
+        } );
+
 
         const injuriesTable = $('#injuries').DataTable( {
             data: injuryData,
@@ -835,6 +905,23 @@
         $('#past-ratings tbody').on('click', 'td.details-control', function () {
             var tr = $(this).closest('tr');
             var row = ratingsTable.row( tr );
+
+            if ( row.child.isShown() ) {
+                // This row is already open - close it
+                row.child.hide();
+                tr.removeClass('shown');
+            }
+            else {
+                // Open this row
+                row.child( formatDetail(row.data()) ).show();
+                tr.addClass('shown');
+            }
+        } );
+
+                // Add event listener for opening and closing details
+        $('#past-reports tbody').on('click', 'td.details-control', function () {
+            var tr = $(this).closest('tr');
+            var row = reportsTable.row( tr );
 
             if ( row.child.isShown() ) {
                 // This row is already open - close it
