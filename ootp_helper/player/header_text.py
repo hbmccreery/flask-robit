@@ -120,7 +120,7 @@ def generate_player_header(player: dict) -> str:
         line_three = line_three + ' | <b> Extension: </b> {0}/{1}'.format(player['ECV'], player['ETY'])
 
     line_four = '<b> ML Yr: </b> {0} | <b> Pro Yr: </b> {1} | <b> Options: </b> {2}'.format(
-        -1, # player['MLY'],
+        -1,  # player['MLY'],
         player['PROY'],
         player['OPT']
     )
@@ -303,8 +303,8 @@ def build_statsplus_data(soup, table_class: str, format_fxn) -> Tuple[Optional[l
 
 
 def parse_draft_info(line_body: str) -> str:
-    draft_round = line_body[line_body.find('Round')+5:line_body.find(',')].strip()
-    draft_pick = line_body[line_body.find('Pick')+4:].strip()
+    draft_round = line_body[line_body.find('Round') + 5:line_body.find(',')].strip()
+    draft_pick = line_body[line_body.find('Pick') + 4:].strip()
     draft_pick = draft_pick[:draft_pick.find(',')]
 
     return 'Round {} Pick {}'.format(draft_round, draft_pick)
@@ -318,12 +318,12 @@ def format_transaction_row(item: dict) -> dict:
         'from': item['from'] if item['txn_type'] != 'drafted' else parse_draft_info(item['line_body']),
         'amount': '${:,.0f}'.format(item['amount']) if item['amount'] else None,
         'years': item['contract_length'],
-        'detail': item['line_body'][item['line_body'].find('[G]')+3:],
+        'detail': item['line_body'][item['line_body'].find('[G]') + 3:],
     }
 
 
 def format_injury_row(item: dict) -> dict:
-    return{
+    return {
         'date': item['date'],
         'info': INJ_TYPE_MAP.get(item['injury_detail'], item['injury_detail']),
         'type': item.get('injury_name', '').lower(),
@@ -381,3 +381,17 @@ def generate_statsplus_info(statsplus: dict, db) -> Tuple[str, list, list, tuple
         pitching_data,
         hitting_data,
     )
+
+
+def build_report_string(reports: dict) -> str:
+    report_strings = []
+    for team in ['WAS', 'COL', 'CIN']:
+        if reports.get(team) is None:
+            continue
+
+        report_strings.append(
+            f'<font color={rating_colors(reports[team])}> {reports[team]} </font> {team} ({reports[f"{team}_acc"]}'
+            f' Accuracy {reports[f"{team}_date"]})'
+        )
+
+    return '<h2>' + '<br/>'.join(report_strings) + '</h2>'

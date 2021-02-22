@@ -5,7 +5,7 @@ import random
 from ootp_helper.constants import *
 from ootp_helper.data_reading import create_player_data, create_benchmarks, read_dist_data
 from ootp_helper.player.header_text import generate_player_name, generate_player_header, generate_player_stat_string, \
-    generate_ratings_header, generate_statsplus_info
+    generate_ratings_header, generate_statsplus_info, build_report_string
 from ootp_helper.player.run_calculators import *
 from ootp_helper.player.table_generators import *
 from ootp_helper.position.position_utils import create_position_tables
@@ -472,20 +472,22 @@ def player(helper):
 
     other_teams = db['scout_takes'].find_one({'_id': helper})
     other_teams['POT'] = int(other_teams['POT'])
-    other_teams = pd.DataFrame.from_records([other_teams])
+    # other_teams = pd.DataFrame.from_records([other_teams])
+    #
+    # other_team_table = other_teams.drop(['_id', 'TM', 'Name'], axis=1).style.applymap(
+    #     background_rating_colors,
+    # ).set_properties(
+    #     **{
+    #         'text-align': 'left',
+    #         'padding': '15px',
+    #         'margin-bottom': '40px',
+    #         'font-size': '1.4em'
+    #     }
+    # ).set_table_styles(
+    #     [{'selector': 'th', 'props': [('font-size', '1.2em')]}]
+    # ).hide_index().render()
 
-    other_team_table = other_teams.drop(['_id', 'TM', 'Name'], axis=1).style.applymap(
-        background_rating_colors,
-    ).set_properties(
-        **{
-            'text-align': 'left',
-            'padding': '15px',
-            'margin-bottom': '40px',
-            'font-size': '1.4em'
-        } 
-    ).set_table_styles(
-        [{'selector': 'th', 'props': [('font-size', '1.2em')]}]
-    ).hide_index().render()
+    other_team_table = build_report_string(other_teams)
 
     return render_template(
         'player.html',
